@@ -23,10 +23,10 @@ function get_count_generate_data() {
 }
 
 function kill_orphaned_data_gen() {
-  echo "kill any orphaned dsdgen processes on segment hosts"
+  echo "kill any orphaned dbgen processes on segment hosts"
   # always return true even if no processes were killed
   for i in $(cat ${TPC_H_DIR}/segment_hosts.txt); do
-    ssh ${i} "pkill dsdgen" || true &
+    ssh ${i} "pkill dbgen" || true &
   done
   wait
 }
