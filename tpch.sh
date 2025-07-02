@@ -1,15 +1,16 @@
 #!/bin/bash
 set -e
 
-PWD=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-VARS_FILE="$PWD/tpch_variables.sh"
-FUNCTIONS_FILE="$PWD/functions.sh"
+VARS_FILE="tpch_variables.sh"
+FUNCTIONS_FILE="functions.sh"
 
-source $VARS_FILE
-source $FUNCTIONS_FILE
-source_bashrc
+# shellcheck source=tpcds_variables.sh
+source ./${VARS_FILE}
+# shellcheck source=functions.sh
+source ./${FUNCTIONS_FILE}
 
-export TPC_H_DIR=$(get_pwd ${BASH_SOURCE[0]})
+TPC_H_DIR=$(get_pwd ${BASH_SOURCE[0]})
+export TPC_H_DIR
 
 log_time "TPC-H test started"
 printf "\n"
@@ -20,6 +21,16 @@ check_variables
 check_admin_user
 # Output admin user and multi-user count to standard out
 print_header
+# Output the version of the database
+get_version
+export DB_VERSION=${VERSION}
+export DB_VERSION_FULL=${VERSION_FULL}
+log_time "Current database is:\n${DB_VERSION}"
+log_time "Current database version is:\n${DB_VERSION_FULL}"
+
+if [ "${RUN_MODEL}" != "cloud" ]; then
+  source_bashrc
+fi
 
 # run the benchmark
 ./rollout.sh
