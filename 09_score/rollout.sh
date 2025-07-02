@@ -43,18 +43,18 @@ PRICE_PER_KQPHH=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select 1000 * cast(${TOTA
 
 printf "TPC-H v3.0.1 Performance Metrics\n"
 printf "====================================\n"
-printf "Power@%dGB\t\t%.1f QphH\n" ${SF} ${POWER}
-printf "Throughput@%dGB\t\t%.1f QphH\n" ${SF} ${THROUGHPUT}
-printf "QphH@%dGB\t\t%.1f QphH\n" ${SF} ${QPHH}
-printf "Price/kQphH@%dGB\t\t$%.2f\n" ${SF} ${PRICE_PER_KQPHH}
+printf "Power@%dGB\t\t\t%.1f QphH\n" ${SF} ${POWER}
+printf "Throughput@%dGB\t\t\t%.1f QphH\n" ${SF} ${THROUGHPUT}
+printf "QphH@%dGB\t\t\t%.1f QphH\n" ${SF} ${QPHH}
+printf "Price/kQphH@%dGB\t\t\t$%.2f\n" ${SF} ${PRICE_PER_KQPHH}
 printf "\n"
-printf "Number of Streams (Sq)\t\t%d\n" "${S_Q}"
-printf "Scale Factor (SF)\t\t%d\n" "${SF}"
+printf "Number of Streams (Sq)\t\t\t%d\n" "${S_Q}"
+printf "Scale Factor (SF)\t\t\t%d\n" "${SF}"
 printf "Load\t\t\t%d\n" "${LOAD_TIME}"
 printf "Analyze\t\t\t%d\n" "${ANALYZE_TIME}"
-printf "1 User Queries\t\t%d\n" "${QUERIES_TIME}"
-printf "Concurrent Queries\t%d\n" "${CONCURRENT_QUERY_TIME}"
-printf "Throughput Test Elapsed Time\t%d\n" "${THROUGHPUT_ELAPSED_TIME}"
+printf "1 User Queries\t\t\t%d\n" "${QUERIES_TIME}"
+printf "Concurrent Queries\t\t\t%d\n" "${CONCURRENT_QUERY_TIME}"
+printf "Throughput Test Elapsed Time\t\t\t%d\n" "${THROUGHPUT_ELAPSED_TIME}"
 printf "\n"
 
 echo "Finished ${step}"
