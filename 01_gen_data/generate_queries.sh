@@ -1,9 +1,6 @@
 #!/bin/bash
 
-PWD=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-source $PWD/../functions.sh
-source_bashrc
-
+PWD=$(get_pwd ${BASH_SOURCE[0]})
 set -e
 
 query_id=1
