@@ -18,6 +18,7 @@ THROUGHPUT_ELAPSED_TIME=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select max(end_ep
 
 S_Q=${MULTI_USER_COUNT}
 SF=${GEN_DATA_SCALE}
+TOTAL_PRICE=1
 
 # Remove legacy score calculation sections (v1.3.1 and v2.2.0)
 
