@@ -12,8 +12,13 @@ init_log ${step}
 
 ADMIN_HOME=$(eval echo ~$ADMIN_USER)
 
-get_version
 filter="gpdb"
+
+if [ "$DB_VERSION" = "synxdb" ]; then
+    env_file="${GPHOME}/cluster_env.sh"
+else
+    env_file="${GPHOME}/greenplum_path.sh"
+fi
 
 function copy_script()
 {
@@ -54,8 +59,8 @@ function start_gpfdist()
     GEN_DATA_PATH="${GEN_DATA_PATH}/hbenchmark"
     PORT=$((GPFDIST_PORT + flag))
     let flag=$flag+1
-    echo "ssh -n ${EXT_HOST} \"bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH}'\""
-    ssh -n ${EXT_HOST} "bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH}'" &
+    log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}'\""
+    ssh -n ${EXT_HOST} "bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}'" &
   done
   wait
 }

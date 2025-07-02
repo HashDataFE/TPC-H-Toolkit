@@ -2,8 +2,9 @@
 export ADMIN_USER="gpadmin"
 export BENCH_ROLE="hbench"
 export SCHEMA_NAME="tpch"
-export GREENPLUM_PATH=$GPHOME/greenplum_path.sh
-export CHIP_TYPE="x86"
+
+## Set to "local" to run the benchmark on the COORDINATOR host or "cloud" to run the benchmark from a remote client.
+export RUN_MODEL="local"
 
 # to connect directly to GP
 export PSQL_OPTIONS="-p 5432"
