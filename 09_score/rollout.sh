@@ -46,9 +46,9 @@ PRICE_PER_KQPHH=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select 1000 * cast(${TOTA
 
 printf "Number of Streams (Sq)\t\t%d\n" "${S_Q}"
 printf "Scale Factor (SF)\t\t%d\n" "${SF}"
-printf "Load (seconds)\t\t%d\n" "${LOAD_TIME}"
+printf "Load (seconds)\t\t\t%d\n" "${LOAD_TIME}"
 printf "Analyze (seconds)\t\t%d\n" "${ANALYZE_TIME}"
-printf "1 User Queries (seconds)\t\t%d\tFor %d success queries and %d failed queries\n" "${QUERIES_TIME}" "${SUCCESS_QUERY}" "${FAILD_QUERY}"
+printf "1 User Queries (seconds)\t%d\tFor %d success queries and %d failed queries\n" "${QUERIES_TIME}" "${SUCCESS_QUERY}" "${FAILD_QUERY}"
 printf "Sum of Elapse Time for all Concurrent Queries (seconds)\t%d\n" "${CONCURRENT_QUERY_TIME}"
 printf "Throughput Test Elapsed Time (seconds)\t%d\n" "${THROUGHPUT_ELAPSED_TIME}"
 printf "\n"
