@@ -21,7 +21,7 @@ function get_psql_count()
 }
 
 function get_running_jobs_count() {
-  job_count=$(ps -fu "${ADMIN_USER}" | grep -c "07_multi_user/test.sh" || true)
+  job_count=$(ps -fu "${ADMIN_USER}" |grep -v grep |grep "07_multi_user/test.sh"|wc -l || true)
   echo "${job_count}"
 }
 
@@ -94,12 +94,12 @@ seconds=0
 echo -n "Multi-user query duration: "
 tput sc
 running_jobs_count=$(get_running_jobs_count)
-while [ ${running_jobs_count} -gt 1 ]; do
+while [ ${running_jobs_count} -gt 0 ]; do
   tput rc
   echo -n "${seconds} second(s)"
-  sleep 5
+  sleep 15
   running_jobs_count=$(get_running_jobs_count)
-  seconds=$((seconds + 5))
+  seconds=$((seconds + 15))
 done
 
 echo ""
