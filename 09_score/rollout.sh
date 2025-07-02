@@ -19,22 +19,34 @@ THROUGHPUT_ELAPSED_TIME=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select max(end_ep
 S_Q=${MULTI_USER_COUNT}
 SF=${GEN_DATA_SCALE}
 
-# Calculate operands for v1.3.1 of the TPC-H score
-Q_1_3_1=$(( 3 * S_Q * 99 ))
-TPT_1_3_1=$(( QUERIES_TIME * S_Q ))
-TTT_1_3_1=$(( 2 * CONCURRENT_QUERY_TIME ))
-TLD_1_3_1=$(( S_Q * LOAD_TIME / 100 ))
+# Remove legacy score calculation sections (v1.3.1 and v2.2.0)
 
-# Calculate operands for v2.2.0 of the TPC-H score
-Q_2_2_0=$(( S_Q * 99 ))
-TPT_2_2_0=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select cast(${QUERIES_TIME} as decimal) * cast(${S_Q} as decimal) / cast(3600.0 as decimal)")
-TTT_2_2_0=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select cast(2 as decimal) * cast(${THROUGHPUT_ELAPSED_TIME} as decimal) / cast(3600.0 as decimal)")
-TLD_2_2_0=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select cast(0.01 as decimal) * cast(${S_Q} as decimal) * cast(${LOAD_TIME} as decimal) / cast(3600.0 as decimal)")
+# Add v3.0.1 score calculations per TPC-H specification
+# 1. Calculate Power metric (single stream performance)
+# Formula: Power@Size = (22 * SF) / (Query Execution Time in hours)
+POWER=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select cast(22 as decimal) * cast(${SF} as decimal) / (cast(${QUERIES_TIME} as decimal)/3600.0)")
 
-# Calculate scores using aggregation functions in psql
-SCORE_1_3_1=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select floor(cast(${Q_1_3_1} as decimal) * cast(${SF} as decimal) / (cast(${TPT_1_3_1} as decimal) + cast(${TTT_1_3_1} as decimal) + cast(${TLD_1_3_1} as decimal)))")
-SCORE_2_2_0=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select floor(cast(${Q_2_2_0} as decimal) * cast(${SF} as decimal) / exp((ln(cast(${TPT_2_2_0} as decimal)) + ln(cast(${TTT_2_2_0} as decimal)) + ln(cast(${TLD_2_2_0} as decimal))) / cast(3.0 as decimal)))")
+# 2. Calculate Throughput metric (multi-stream performance)
+# Formula: Throughput@Size = (S * 22 * 3600) / Ts
+# Where: S = number of query streams, Ts = throughput test elapsed time in seconds
+THROUGHPUT=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select cast(${S_Q} as decimal) * 22 * 3600.0 / cast(${THROUGHPUT_ELAPSED_TIME} as decimal)")
 
+# 3. Calculate composite QphH@Size metric
+# Formula: QphH@Size = sqrt(Power@Size * Throughput@Size)
+QPHH=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select sqrt(cast(${POWER} as decimal) * cast(${THROUGHPUT} as decimal))")
+
+# 4. Calculate Price/Performance metric
+# Formula: $/kQphH@Size = (1000 * Total System Price) / QphH@Size
+# Note: TOTAL_PRICE should be set as an environment variable with system cost
+PRICE_PER_KQPHH=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select 1000 * cast(${TOTAL_PRICE} as decimal) / cast(${QPHH} as decimal)")
+
+printf "TPC-H v3.0.1 Performance Metrics\n"
+printf "====================================\n"
+printf "Power@%dGB\t\t%.1f QphH\n" ${SF} ${POWER}
+printf "Throughput@%dGB\t%.1f QphH\n" ${SF} ${THROUGHPUT}
+printf "QphH@%dGB\t\t%.1f QphH\n" ${SF} ${QPHH}
+printf "Price/kQphH@%dGB\t$%.2f\n" ${SF} ${PRICE_PER_KQPHH}
+printf "\n"
 printf "Number of Streams (Sq)\t%d\n" "${S_Q}"
 printf "Scale Factor (SF)\t%d\n" "${SF}"
 printf "Load\t\t\t%d\n" "${LOAD_TIME}"
@@ -43,19 +55,6 @@ printf "1 User Queries\t\t%d\n" "${QUERIES_TIME}"
 printf "Concurrent Queries\t%d\n" "${CONCURRENT_QUERY_TIME}"
 printf "Throughput Test Elapsed Time\t%d\n" "${THROUGHPUT_ELAPSED_TIME}"
 printf "\n"
-# printf "TPC-H v1.3.1 (QphDS@SF = floor(SF * Q / sum(TPT, TTT, TLD)))\n"
-# printf "Q (3 * Sq * 99)\t\t%d\n" "${Q_1_3_1}"
-# printf "TPT (seconds)\t\t%d\n" "${TPT_1_3_1}"
-# printf "TTT (seconds)\t\t%d\n" "${TTT_1_3_1}"
-# printf "TLD (seconds)\t\t%d\n" "${TLD_1_3_1}"
-# printf "Score\t\t\t%d\n" "${SCORE_1_3_1}"
-# printf "\n"
-# printf "TPC-H v2.2.0 (QphDS@SF = floor(SF * Q / geomean(TPT, TTT, TLD)))\n"
-# printf "Q (Sq * 99)\t\t%d\n" "${Q_2_2_0}"
-# printf "TPT (hours)\t\t%.3f\n" "${TPT_2_2_0}"
-# printf "TTT (hours)\t\t%.3f\n" "${TTT_2_2_0}"
-# printf "TLD (hours)\t\t%.3f\n" "${TLD_2_2_0}"
-# printf "Score\t\t\t%d\n" "${SCORE_2_2_0}"
 
 echo "Finished ${step}"
 
