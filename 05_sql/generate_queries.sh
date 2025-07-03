@@ -55,8 +55,10 @@ for i in $(ls $PWD/queries/*.sql |  xargs -n 1 basename); do
 	
 	printf ":EXPLAIN_ANALYZE\n" >> ${TPC_H_DIR}/05_sql/${filename}
 	
-	log_time "./queries/qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename"
-	$PWD/queries/qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename
+	cd ${TPC_H_DIR}/05_sql/queries
+	log_time "./qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename"
+	./qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename
+	cd ..
 done
 
 log_time "COMPLETE: qgen scale ${GEN_DATA_SCALE}"
