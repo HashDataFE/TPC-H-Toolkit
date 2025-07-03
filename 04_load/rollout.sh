@@ -87,7 +87,12 @@ done
 
 log_time "finished loading tables"
 
-stop_gpfdist
+if [ "${RUN_MODEL}" == "remote" ]; then
+  sh ${PWD}/stop_gpfdist.sh
+elif [ "${RUN_MODEL}" == "local" ]; then
+  stop_gpfdist
+fi
+
 
 echo "Finished ${step}"
 log_time "Step ${step} finished"
