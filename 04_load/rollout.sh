@@ -79,8 +79,8 @@ for i in $(ls ${PWD}/*.${filter}.*.sql); do
 
   id=$(echo ${i} | awk -F '.' '{print $1}')
   table_name=$(echo ${i} | awk -F '.' '{print $3}')
-  log_time "psql -v ON_ERROR_STOP=1 -f ${i} -v ext_schema_name=\"$ext_schema_name\" -v schema_name=\"$schema_name\" | grep INSERT | awk -F ' ' '{print \$3}'"
-  tuples=$(psql -v ON_ERROR_STOP=1 -f ${i} -v ext_schema_name="$ext_schema_name" -v schema_name="$schema_name" | grep INSERT | awk -F ' ' '{print $3}'; exit ${PIPESTATUS[0]})
+  log_time "psql -v ON_ERROR_STOP=1 -f ${i} -v ext_schema_name=\"$ext_schema_name\" -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" | grep INSERT | awk -F ' ' '{print \$3}'"
+  tuples=$(psql -v ON_ERROR_STOP=1 -f ${i} -v ext_schema_name="$ext_schema_name" -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" | grep INSERT | awk -F ' ' '{print $3}'; exit ${PIPESTATUS[0]})
 
   print_log ${tuples}
 done

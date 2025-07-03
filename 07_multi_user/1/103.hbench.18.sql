@@ -1,5 +1,5 @@
 set role hbench;
-set search_path=:schema_name,public;
+set search_path=:DB_SCHEMA_NAME,public;
 :EXPLAIN_ANALYZE
 --begin q18
 -- $ID$

@@ -61,7 +61,7 @@ function generate_queries()
 	rm -f ${sql_dir}/${tpch_query_name}
 }
 
-if [ "${RUN_QGEN}" = "true" ]; then
+if [ "${RUN_MULTI_USER_QGEN}" = "true" ]; then
   generate_queries
 fi
 

@@ -45,8 +45,8 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
       fi
     fi
 
-    log_time "psql -v ON_ERROR_STOP=1 -a -q -P pager=off -f ${i} -v STORAGE_OPTIONS=\"${STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\" -v ext_schema_name=\"${ext_schema_name}\" -v schema_name=\"${schema_name}\""
-    psql -v ON_ERROR_STOP=1 -q -q -P pager=off -f ${i} -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}" -v ext_schema_name="${ext_schema_name}" -v schema_name="${schema_name}"
+    log_time "psql -v ON_ERROR_STOP=1 -a -q -P pager=off -f ${i} -v STORAGE_OPTIONS=\"${STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\" -v ext_schema_name=\"${ext_schema_name}\" -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\""
+    psql -v ON_ERROR_STOP=1 -q -q -P pager=off -f ${i} -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}" -v ext_schema_name="${ext_schema_name}" -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}"
     print_log
   done
 
