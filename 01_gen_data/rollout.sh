@@ -91,8 +91,8 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
     cp ${PWD}/dbgen ${PWD}/dists.dss ${GEN_DATA_PATH}
 
     while [ ${CHILD} -le ${PARALLEL} ]; do
-      log_time "${GEN_DATA_PATH}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${PARALLEL} -child ${CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &"
       cd ${GEN_DATA_PATH}
+      log_time "${GEN_DATA_PATH}/dbgen -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} -v > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &"
       ${GEN_DATA_PATH}/dbgen -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} -v > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &
       CHILD=$((CHILD + 1))
     done
