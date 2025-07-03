@@ -65,9 +65,10 @@ function start_gpfdist()
   wait
 }
 
-copy_script
-start_gpfdist
-
+if [ "${RUN_MODEL}" == "local" ]; then
+  copy_script
+  start_gpfdist
+fi
 # Wait for all gpfidist to start
 # sleep 10
 

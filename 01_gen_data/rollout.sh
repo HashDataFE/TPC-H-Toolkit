@@ -96,15 +96,15 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
       ${GEN_DATA_PATH}/${CHILD}/dbgen -f -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &
       
       if [ "$CHILD" -eq "1" ]; then
-        mv $DATA_DIRECTORY/${CHILD}/nation.tbl $DATA_DIRECTORY/nation.tbl.${CHILD}
-        mv $DATA_DIRECTORY/${CHILD}/region.tbl $DATA_DIRECTORY/region.tbl.${CHILD}
+        mv ${GEN_DATA_PATH}/${CHILD}/nation.tbl ${GEN_DATA_PATH}/nation.tbl.${CHILD}
+        mv ${GEN_DATA_PATH}/${CHILD}/region.tbl ${GEN_DATA_PATH}/region.tbl.${CHILD}
       fi
       
       if [ "$CHILD" -gt "1" ]; then
-        rm -f $DATA_DIRECTORY/${CHILD}/nation.tbl
-        rm -f $DATA_DIRECTORY/${CHILD}/region.tbl
-        touch $DATA_DIRECTORY/${CHILD}/nation.tbl.${CHILD}
-        touch $DATA_DIRECTORY/${CHILD}/region.tbl.${CHILD}
+        rm -f ${GEN_DATA_PATH}/${CHILD}/nation.tbl
+        rm -f ${GEN_DATA_PATH}/${CHILD}/region.tbl
+        touch ${GEN_DATA_PATH}/${CHILD}/nation.tbl.${CHILD}
+        touch ${GEN_DATA_PATH}/${CHILD}/region.tbl.${CHILD}
       fi
       CHILD=$((CHILD + 1))
     done
