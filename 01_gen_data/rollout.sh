@@ -92,8 +92,8 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
 
     while [ ${CHILD} -le ${PARALLEL} ]; do
       cd ${GEN_DATA_PATH}
-      log_time "${GEN_DATA_PATH}/dbgen -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} -v > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &"
-      ${GEN_DATA_PATH}/dbgen -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} -v > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &
+      log_time "${GEN_DATA_PATH}/dbgen -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &"
+      ${GEN_DATA_PATH}/dbgen -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &
       CHILD=$((CHILD + 1))
     done
     wait
