@@ -12,6 +12,21 @@ if [ "${GEN_DATA_SCALE}" == "" ] || [ "${BENCH_ROLE}" == "" ]; then
 	exit 1
 fi
 
+# Define data loading log file
+LOG_FILE="${TPC_DS_DIR}/log/rollout_load.log"
+
+if [ "${UNIFY_QGEN_SEED}" == "true" ]; then
+  # Use a fixed RNGSEED when unified seed is enabled
+  RNGSEED=2016032410
+else 
+  # Get RNGSEED from log file or use default
+  if [[ -f "$LOG_FILE" ]]; then
+    RNGSEED=$(tail -n 1 "$LOG_FILE" | cut -d '|' -f 6)
+  else
+    RNGSEED=2016032410
+  fi
+fi
+
 # Clean up previous SQL files
 rm -f ${TPC_H_DIR}/05_sql/*.${BENCH_ROLE}.*.sql*
 
@@ -40,8 +55,8 @@ for i in $(ls $PWD/queries/*.sql |  xargs -n 1 basename); do
 	
 	printf ":EXPLAIN_ANALYZE\n" >> ${TPC_H_DIR}/05_sql/${filename}
 	
-	echo "./qgen -d -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename"
-	$PWD/qgen -d -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename
+	log_time "./queries/qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename"
+	$PWD/queries/qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename
 done
 
 log_time "COMPLETE: qgen scale ${GEN_DATA_SCALE}"

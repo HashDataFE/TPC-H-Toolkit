@@ -28,11 +28,11 @@ function make_tpc()
 
 function copy_tpc()
 {
-  cp ${PWD}/dbgen/qgen ../*_sql/
-  cp ${PWD}/dbgen/qgen ../*_multi_user/
+  cp ${PWD}/dbgen/qgen ../*_sql/queries
+  cp ${PWD}/dbgen/qgen ../*_multi_user/queries
   cp ${PWD}/dbgen/dbgen ../*_gen_data/
-  cp ${PWD}/dbgen/dists.dss ../*_sql/
-  cp ${PWD}/dbgen/dists.dss ../*_multi_user/
+  cp ${PWD}/dbgen/dists.dss ../*_sql/queries
+  cp ${PWD}/dbgen/dists.dss ../*_multi_user/queries
   cp ${PWD}/dbgen/dists.dss ../*_gen_data/
   
   #copy the compiled dsdgen program to the segment nodes when running in LOCAL mode
