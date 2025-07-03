@@ -108,7 +108,7 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
           )
           tuples=$((tuples + result))
         else
-          log_time "No matching files found for pattern: ${GEN_DATA_PATH}/[0-9]*/${table_name}.tbl.[0-9]*"
+          log_time "Found no file: ${file} for ${table_name}"
         fi
       done
     else
