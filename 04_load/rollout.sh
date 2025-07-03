@@ -121,6 +121,10 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
   } &
 done
 
+wait
+# Close the file descriptor
+exec 5>&-
+
 log_time "finished loading tables"
 
 if [ "${RUN_MODEL}" == "remote" ]; then
