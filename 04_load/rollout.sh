@@ -87,7 +87,6 @@ done
 schema_name=${DB_SCHEMA_NAME}
 ext_schema_name="ext_${DB_SCHEMA_NAME}"
 
-for i in $(ls ${PWD}/*.${filter}.*.sql); do
 for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "%f\n" | sort -n); do
 # Acquire a token to control concurrency
   read -u 5

@@ -94,6 +94,18 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
       cd ${GEN_DATA_PATH}/${CHILD}/
       log_time "${GEN_DATA_PATH}/${CHILD}/dbgen -f -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &"
       ${GEN_DATA_PATH}/${CHILD}/dbgen -f -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &
+      
+      if [ "$CHILD" -eq "1" ]; then
+        mv $DATA_DIRECTORY/${CHILD}/nation.tbl $DATA_DIRECTORY/nation.tbl.${CHILD}
+        mv $DATA_DIRECTORY/${CHILD}/region.tbl $DATA_DIRECTORY/region.tbl.${CHILD}
+      fi
+      
+      if [ "$CHILD" -gt "1" ]; then
+        rm -f $DATA_DIRECTORY/${CHILD}/nation.tbl
+        rm -f $DATA_DIRECTORY/${CHILD}/region.tbl
+        touch $DATA_DIRECTORY/${CHILD}/nation.tbl.${CHILD}
+        touch $DATA_DIRECTORY/${CHILD}/region.tbl.${CHILD}
+      fi
       CHILD=$((CHILD + 1))
     done
     wait
