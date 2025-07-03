@@ -111,6 +111,7 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
         touch ${GEN_DATA_PATH}/${CHILD}/nation.tbl.${CHILD}
         touch ${GEN_DATA_PATH}/${CHILD}/region.tbl.${CHILD}
       fi
+      CHILD=$((CHILD + 1))
     done
   else
     kill_orphaned_data_gen
