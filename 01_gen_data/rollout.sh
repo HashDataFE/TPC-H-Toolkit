@@ -87,13 +87,13 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
     fi
     rm -rf ${GEN_DATA_PATH}/*
     mkdir -p ${GEN_DATA_PATH}/logs
-    
-    cp ${PWD}/dbgen ${PWD}/dists.dss ${GEN_DATA_PATH}
 
     while [ ${CHILD} -le ${PARALLEL} ]; do
-      cd ${GEN_DATA_PATH}
-      log_time "${GEN_DATA_PATH}/dbgen -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &"
-      ${GEN_DATA_PATH}/dbgen -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &
+      mkdir -p ${GEN_DATA_PATH}/${CHILD}
+      cp ${PWD}/dbgen ${PWD}/dists.dss ${GEN_DATA_PATH}/${CHILD}/
+      cd ${GEN_DATA_PATH}/${CHILD}/
+      log_time "${GEN_DATA_PATH}/${CHILD}/dbgen -f -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &"
+      ${GEN_DATA_PATH}/${CHILD}/dbgen -f -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &
       CHILD=$((CHILD + 1))
     done
     wait
