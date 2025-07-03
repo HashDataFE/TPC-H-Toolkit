@@ -10,6 +10,22 @@ step="multi_user"
 log_time "Step ${step} started"
 printf "\n"
 
+# define data loding log file
+LOG_FILE="${TPC_H_DIR}/log/rollout_load.log"
+
+# Handle RNGSEED configuration
+if [ "${UNIFY_QGEN_SEED}" == "true" ]; then
+  # Use a fixed RNGSEED when unified seed is enabled
+  RNGSEED=2016032410
+else 
+  # Get RNGSEED from log file or use default
+  if [[ -f "$LOG_FILE" ]]; then
+    RNGSEED=$(tail -n 1 "$LOG_FILE" | cut -d '|' -f 6)
+  else
+    RNGSEED=2016032410
+  fi
+fi
+
 if [ "${MULTI_USER_COUNT}" -eq "0" ]; then
 	echo "MULTI_USER_COUNT set at 0 so exiting..."
 	exit 0
@@ -59,9 +75,9 @@ function generate_templates()
 	cd ${PWD}/queries
 	
 	for i in $(seq 1 $MULTI_USER_COUNT); do
-		echo "rm -f $CurrentPath/*.sql"
-		echo "./qgen -d -s ${GEN_DATA_SCALE} -p $i -c -v > $CurrentPath/query_$i.sql"
-		${PWD}/qgen -d -s ${GEN_DATA_SCALE} -p $i -c -v > $CurrentPath/query_$i.sql
+		log_time "rm -f $CurrentPath/*.sql"
+		log_time "./qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} -p $i -c -v > $CurrentPath/query_$i.sql"
+		${PWD}/qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} -p $i -c -v > $CurrentPath/query_$i.sql
 	done
 	
 	cd ..
