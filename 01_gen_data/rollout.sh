@@ -94,21 +94,24 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
       cd ${GEN_DATA_PATH}/${CHILD}/
       log_time "${GEN_DATA_PATH}/${CHILD}/dbgen -f -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &"
       ${GEN_DATA_PATH}/${CHILD}/dbgen -f -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &
-      
+      CHILD=$((CHILD + 1))
+    done
+    wait
+    
+    #Adjust data files to remove duplicate data for region and nation
+    CHILD=1
+    while [ ${CHILD} -le ${PARALLEL} ]; do  
       if [ "$CHILD" -eq "1" ]; then
         mv ${GEN_DATA_PATH}/${CHILD}/nation.tbl ${GEN_DATA_PATH}/${CHILD}/nation.tbl.${CHILD}
         mv ${GEN_DATA_PATH}/${CHILD}/region.tbl ${GEN_DATA_PATH}/${CHILD}/region.tbl.${CHILD}
       fi
-      
       if [ "$CHILD" -gt "1" ]; then
         rm -f ${GEN_DATA_PATH}/${CHILD}/nation.tbl
         rm -f ${GEN_DATA_PATH}/${CHILD}/region.tbl
         touch ${GEN_DATA_PATH}/${CHILD}/nation.tbl.${CHILD}
         touch ${GEN_DATA_PATH}/${CHILD}/region.tbl.${CHILD}
       fi
-      CHILD=$((CHILD + 1))
     done
-    wait
   else
     kill_orphaned_data_gen
     copy_generate_data
