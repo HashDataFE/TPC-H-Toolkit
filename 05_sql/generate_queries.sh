@@ -15,15 +15,13 @@ fi
 # Clean up previous SQL files
 rm -f ${TPC_H_DIR}/05_sql/*.${BENCH_ROLE}.*.sql*
 
-cd $PWD/queries
-
-for i in $(ls $PWD/*.sql |  xargs -n 1 basename); do
+for i in $(ls $PWD/queries/*.sql |  xargs -n 1 basename); do
 	q=$(echo $i | awk -F '.' '{print $1}')
 	id=$(printf %02d $q)
 	file_id="1""$id"
 	filename=${file_id}.${BENCH_ROLE}.${id}.sql
 
-	echo "echo \":EXPLAIN_ANALYZE\" > $PWD/../../05_sql/$filename"
+	echo "echo \":EXPLAIN_ANALYZE\" > ${TPC_H_DIR}/05_sql/$filename"
 
 	printf "set role ${BENCH_ROLE};\nset search_path=${DB_SCHEMA_NAME},public;\n" > ${TPC_H_DIR}/05_sql/${filename}
 
@@ -42,10 +40,8 @@ for i in $(ls $PWD/*.sql |  xargs -n 1 basename); do
 	
 	printf ":EXPLAIN_ANALYZE\n" >> ${TPC_H_DIR}/05_sql/${filename}
 	
-	echo "./qgen -d -s ${GEN_DATA_SCALE} $q >> $PWD/../../05_sql/$filename"
-	$PWD/qgen -d -s ${GEN_DATA_SCALE} $q >> $PWD/../../05_sql/$filename
+	echo "./qgen -d -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename"
+	$PWD/qgen -d -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename
 done
 
-cd ..
-
-echo "COMPLETE: qgen scale ${GEN_DATA_SCALE}"
+log_time "COMPLETE: qgen scale ${GEN_DATA_SCALE}"
