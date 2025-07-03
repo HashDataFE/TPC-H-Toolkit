@@ -99,7 +99,7 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
     if [ "${RUN_MODEL}" == "cloud" ]; then
       GEN_DATA_PATH=${CLIENT_GEN_PATH}
       tuples=0
-      for file in "${GEN_DATA_PATH}/[0-9]/${table_name}".tbl.[0-9]; do
+      for file in "${GEN_DATA_PATH}/[0-9]*/${table_name}".tbl.[0-9]*; do
         if [ -e "$file" ]; then
           log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c \"\COPY ${DB_SCHEMA_NAME}.${table_name} FROM '$file' WITH (FORMAT csv, DELIMITER '|', NULL '', ESCAPE E'\\\\\\\\', ENCODING 'LATIN1')\" | grep COPY | awk -F ' ' '{print \$2}'"
           result=$(
@@ -108,7 +108,7 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
           )
           tuples=$((tuples + result))
         else
-          log_time "No matching files found for pattern: ${GEN_DATA_PATH}/[0-9]/${table_name}.tbl.[0-9]"
+          log_time "No matching files found for pattern: ${GEN_DATA_PATH}/[0-9]*/${table_name}.tbl.[0-9]*"
         fi
       done
     else
