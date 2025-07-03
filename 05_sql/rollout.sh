@@ -24,37 +24,26 @@ table_name="analyzedb"
 
 if [ "${RUN_ANALYZE}" == "true" ]; then
 
-# max_id=$(ls ${PWD}/*.sql | tail -1)
-# i=$(basename ${max_id} | awk -F '.' '{print $1}' | sed 's/^0*//')
-
-  dbname="$PGDATABASE"
-  if [ "${dbname}" == "" ]; then
-    dbname="${ADMIN_USER}"
-  fi
-
-  if [ "${PGPORT}" == "" ]; then
-    export PGPORT=5432
-  fi
-
-  #Analyze schema using analyzedb
-  analyzedb -d ${dbname} -s ${DB_SCHEMA_NAME} --full -a
+  log_time "Analyze tables started:"
+  log_time "psql -t -A ${PSQL_OPTIONS} -c \"select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${DB_SCHEMA_NAME}' and tablename NOT like '%prt%';\" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -a -A ${PSQL_OPTIONS} -c \"{}\""
+  psql -t -A ${PSQL_OPTIONS} -c "select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${DB_SCHEMA_NAME}' and tablename NOT like '%prt%';" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -a -A ${PSQL_OPTIONS} -c "{}"
 
   #make sure root stats are gathered
-  if [ "${VERSION}" == "gpdb_4_3" ] || [ "${VERSION}" == "gpdb_5" ] || [ "${VERSION}" == "gpdb_6" ]; then
+  if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ] || [ "${DB_VERSION}" == "gpdb_6" ]; then
     SQL_QUERY="select n.nspname, c.relname from pg_class c join pg_namespace n on c.relnamespace = n.oid left outer join (select starelid from pg_statistic group by starelid) s on c.oid = s.starelid join (select tablename from pg_partitions group by tablename) p on p.tablename = c.relname where n.nspname = '${DB_SCHEMA_NAME}' and s.starelid is null order by 1, 2"
   else
     SQL_QUERY="select n.nspname, c.relname from pg_class c join pg_namespace n on c.relnamespace = n.oid left outer join (select starelid from pg_statistic group by starelid) s on c.oid = s.starelid join pg_partitioned_table p on p.partrelid = c.oid where n.nspname = '${DB_SCHEMA_NAME}' and s.starelid is null order by 1, 2"
   fi
 
-  for t in $(psql -v ON_ERROR_STOP=1 -q -t -A -c "${SQL_QUERY}"); do
+  for t in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "${SQL_QUERY}"); do
     schema_name=$(echo ${t} | awk -F '|' '{print $1}')
     table_name=$(echo ${t} | awk -F '|' '{print $2}')
-    echo "Missing root stats for ${schema_name}.${table_name}"
+    log_time "Missing root stats for ${schema_name}.${table_name}"
     SQL_QUERY="ANALYZE ROOTPARTITION ${schema_name}.${table_name}"
-    log_time "psql -v ON_ERROR_STOP=1 -q -t -A -c \"${SQL_QUERY}\""
-    psql -v ON_ERROR_STOP=1 -q -t -A -c "${SQL_QUERY}"
+    log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c \"${SQL_QUERY}\""
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "${SQL_QUERY}"
   done
-
+  log_time "Analyze tables finished."
 else
   echo "AnalyzeDB Skipped..."
 fi
