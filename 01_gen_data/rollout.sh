@@ -76,26 +76,49 @@ schema_name=${DB_VERSION}
 table_name="gen_data"
 
 if [ "${GEN_NEW_DATA}" == "true" ]; then
-  kill_orphaned_data_gen
-  copy_generate_data
-  gen_data
-  echo "Current database running this test is ${VERSION}"
-  echo ""
-  get_count_generate_data
-  echo "Now generating data.  This may take a while."
-  seconds=0
-  echo -ne "Generating data duration: "
-  tput sc
-  while [ "$count" -gt "0" ]; do
-    tput rc
-    echo -ne "${seconds} second(s)"
-    sleep 5
-    seconds=$(( seconds + 5 ))
-    get_count_generate_data
-  done
+  if [ "${RUN_MODEL}" != "local" ]; then
+    PARALLEL=${CLIENT_GEN_PARALLEL}
+    CHILD=1
+    GEN_DATA_PATH="${CLIENT_GEN_PATH}"
 
+    if [[ ! -d "${GEN_DATA_PATH}" && ! -L "${GEN_DATA_PATH}" ]]; then
+      log_time "mkdir ${GEN_DATA_PATH}"
+      mkdir ${GEN_DATA_PATH}
+    fi
+    rm -rf ${GEN_DATA_PATH}/*
+    mkdir -p ${GEN_DATA_PATH}/logs
+    
+    cp ${PWD}/dbgen ${PWD}/dists.dss ${GEN_DATA_PATH}
+
+    while [ ${CHILD} -le ${PARALLEL} ]; do
+      log_time "${GEN_DATA_PATH}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${PARALLEL} -child ${CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &"
+      cd ${GEN_DATA_PATH}
+      ${GEN_DATA_PATH}/dbgen -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} -v > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &
+      CHILD=$((CHILD + 1))
+    done
+    wait
+  else
+    kill_orphaned_data_gen
+    copy_generate_data
+    gen_data
+    echo "Current database running this test is ${VERSION}"
+    echo ""
+    get_count_generate_data
+    echo "Now generating data.  This may take a while."
+    seconds=0
+    echo -ne "Generating data duration: "
+    tput sc
+    while [ "$count" -gt "0" ]; do
+      tput rc
+      echo -ne "${seconds} second(s)"
+      sleep 5
+      seconds=$(( seconds + 5 ))
+      get_count_generate_data
+    done
+  fi
+    
   echo ""
-  echo "Done generating data"
+  log_time "Done generating data"
   echo ""
 fi
 

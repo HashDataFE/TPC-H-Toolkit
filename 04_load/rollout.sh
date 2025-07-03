@@ -71,18 +71,54 @@ start_gpfdist
 # Wait for all gpfidist to start
 # sleep 10
 
+
+# Create FIFO for concurrency control
+mkfifo /tmp/$$.fifo
+exec 5<> /tmp/$$.fifo
+rm -f /tmp/$$.fifo
+
+# Initialize tokens based on the value of LOAD_PARALLEL
+for ((i=0; i<${LOAD_PARALLEL}; i++)); do
+    echo >&5
+done
+
+# Use find to get just filenames, then process each file in numeric order
+
 schema_name=${DB_SCHEMA_NAME}
 ext_schema_name="ext_${DB_SCHEMA_NAME}"
 
 for i in $(ls ${PWD}/*.${filter}.*.sql); do
-  start_log
-
-  id=$(echo ${i} | awk -F '.' '{print $1}')
-  table_name=$(echo ${i} | awk -F '.' '{print $3}')
-  log_time "psql -v ON_ERROR_STOP=1 -f ${i} -v ext_schema_name=\"$ext_schema_name\" -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" | grep INSERT | awk -F ' ' '{print \$3}'"
-  tuples=$(psql -v ON_ERROR_STOP=1 -f ${i} -v ext_schema_name="$ext_schema_name" -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" | grep INSERT | awk -F ' ' '{print $3}'; exit ${PIPESTATUS[0]})
-
-  print_log ${tuples}
+for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "%f\n" | sort -n); do
+# Acquire a token to control concurrency
+  read -u 5
+  {
+    start_log
+    id=$(echo ${i} | awk -F '.' '{print $1}')
+    table_name=$(echo ${i} | awk -F '.' '{print $3}')
+    
+    if [ "${RUN_MODEL}" == "cloud" ]; then
+      GEN_DATA_PATH=${CLIENT_GEN_PATH}
+      tuples=0
+      for file in "${GEN_DATA_PATH}/${table_name}"_[0-9]*_[0-9]*.dat; do
+        if [ -e "$file" ]; then
+          log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c \"\COPY ${DB_SCHEMA_NAME}.${table_name} FROM '$file' WITH (FORMAT csv, DELIMITER '|', NULL '', ESCAPE E'\\\\\\\\', ENCODING 'LATIN1')\" | grep COPY | awk -F ' ' '{print \$2}'"
+          result=$(
+            psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c "\COPY ${DB_SCHEMA_NAME}.${table_name} FROM '$file' WITH (FORMAT csv, DELIMITER '|', NULL '', ESCAPE E'\\\\', ENCODING 'LATIN1')" | grep COPY | awk -F ' ' '{print $2}'
+            exit ${PIPESTATUS[0]}
+          )
+          tuples=$((tuples + result))
+        else
+          log_time "No matching files found for pattern: ${GEN_DATA_PATH}/${table_name}_[0-9]*_[0-9]*.dat"
+        fi
+      done
+    else
+      log_time "psql -v ON_ERROR_STOP=1 -f ${i} -v ext_schema_name=\"$ext_schema_name\" -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" | grep INSERT | awk -F ' ' '{print \$3}'"
+      tuples=$(psql -v ON_ERROR_STOP=1 -f ${i} -v ext_schema_name="$ext_schema_name" -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" | grep INSERT | awk -F ' ' '{print $3}'; exit ${PIPESTATUS[0]})
+    fi
+    print_log ${tuples}
+    # Release the token
+    echo >&5
+  } &
 done
 
 log_time "finished loading tables"
