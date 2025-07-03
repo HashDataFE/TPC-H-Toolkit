@@ -71,8 +71,8 @@ start_gpfdist
 # Wait for all gpfidist to start
 # sleep 10
 
-schema_name=${SCHEMA_NAME}
-ext_schema_name="ext_${SCHEMA_NAME}"
+schema_name=${DB_SCHEMA_NAME}
+ext_schema_name="ext_${DB_SCHEMA_NAME}"
 
 for i in $(ls ${PWD}/*.${filter}.*.sql); do
   start_log

@@ -23,7 +23,7 @@ if [ "$return_status" -eq "0" ]; then
 
 	start_log
 	id=${max_id}
-	schema_name=${SCHEMA_NAME}
+	schema_name=${DB_SCHEMA_NAME}
 	table_name="tpch"
 	analyzedb -d ${dbname} -s tpch --full -a
 	tuples="0"
@@ -34,7 +34,7 @@ else
 
 		start_log
 		id=$(echo ${i} | awk -F '.' '{print $1}')
-		schema_name=${SCHEMA_NAME}
+		schema_name=${DB_SCHEMA_NAME}
 		table_name=$(echo ${i} | awk -F '.' '{print $3}')
 
 		log_time "psql -a -v ON_ERROR_STOP=ON -c \"ANALYZE ${schema_name}.${table_name}\""
@@ -48,7 +48,7 @@ else
 		start_log
 
 		id=$(echo ${i} | awk -F '.' '{print $1}')
-		schema_name=${SCHEMA_NAME}
+		schema_name=${DB_SCHEMA_NAME}
 		table_name=$(echo ${i} | awk -F '.' '{print $3}')
 
 		log_time "psql -a -v ON_ERROR_STOP=ON -c \"ANALYZE ROOTPARTITION ${schema_name}.${table_name}\""

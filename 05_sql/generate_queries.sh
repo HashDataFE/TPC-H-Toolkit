@@ -12,7 +12,7 @@ if [ "${GEN_DATA_SCALE}" == "" ] || [ "${BENCH_ROLE}" == "" ]; then
 	exit 1
 fi
 
-echo "rm -f $PWD/../05_sql/*.tpch.*.sql"
+# Clean up previous SQL files
 rm -f ${TPC_H_DIR}/05_sql/*.${BENCH_ROLE}.*.sql*
 
 cd $PWD/queries
@@ -25,7 +25,7 @@ for i in $(ls $PWD/*.sql |  xargs -n 1 basename); do
 
 	echo "echo \":EXPLAIN_ANALYZE\" > $PWD/../../05_sql/$filename"
 
-	printf "set role ${BENCH_ROLE};\nset search_path=${SCHEMA_NAME},public;\n" > ${TPC_H_DIR}/05_sql/${filename}
+	printf "set role ${BENCH_ROLE};\nset search_path=${DB_SCHEMA_NAME},public;\n" > ${TPC_H_DIR}/05_sql/${filename}
 
 	for o in $(cat ${TPC_H_DIR}/01_gen_data/optimizer.txt); do
         q2=$(echo ${o} | awk -F '|' '{print $1}')

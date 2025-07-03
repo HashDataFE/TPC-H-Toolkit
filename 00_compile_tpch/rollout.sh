@@ -10,8 +10,10 @@ printf "\n"
 
 init_log ${step}
 start_log
-schema_name=${SCHEMA_NAME}
+schema_name=${DB_VERSION}
+export schema_name
 table_name="compile"
+export table_name
 
 compile_flag="true"
 
@@ -24,27 +26,34 @@ function make_tpc()
   cd ..
 }
 
-function copy_queries()
-{
-  rm -rf ${TPC_H_DIR}/*_gen_data/queries
-  rm -rf ${TPC_H_DIR}/*_multi_user/queries
-  cp -R ${PWD}/dbgen/queries ${TPC_H_DIR}/*_gen_data/
-  cp -R ${PWD}/dbgen/queries ${TPC_H_DIR}/*_multi_user/
-}
-
 function copy_tpc()
 {
-  cp ${PWD}/dbgen/qgen ${TPC_H_DIR}/*_gen_data/queries/
-  cp ${PWD}/dbgen/qgen ${TPC_H_DIR}/*_multi_user/queries/
-  cp ${PWD}/dbgen/dists.dss ${TPC_H_DIR}/*_gen_data/queries/
-  cp ${PWD}/dbgen/dists.dss ${TPC_H_DIR}/*_multi_user/queries/
+  cp ${PWD}/dbgen/qgen ../*_sql/
+  cp ${PWD}/dbgen/qgen ../*_multi_user/
+  cp ${PWD}/dbgen/dbgen ../*_gen_data/
+  cp ${PWD}/dbgen/dists.dss ../*_sql/
+  cp ${PWD}/dbgen/dists.dss ../*_multi_user/
+  cp ${PWD}/dbgen/dists.dss ../*_gen_data/
+  
+  #copy the compiled dsdgen program to the segment nodes when running in LOCAL mode
+  if [ "${RUN_MODEL}" == "local" ]; then
+    echo "copy tpch binaries to segment hosts"
+    echo "RUN_MODEL is LOCAL, proceeding with copying binaries"
+    for i in $(cat ${TPC_H_DIR}/segment_hosts.txt); do
+      scp ${PWD}/dbgen/dbgen ${PWD}/dbgen/dists.dss ${i}: &
+    done
+    wait
+  else
+    echo "RUN_MODEL is not LOCAL, skipping copying binaries"
+  fi
+}
 
-  #copy the compiled dbgen program to the segment nodes
-  echo "copy tpch binaries to segment hosts"
-  for i in $(cat ${TPC_H_DIR}/segment_hosts.txt); do
-    scp ${PWD}/dbgen/dbgen ${PWD}/dbgen/dists.dss ${i}: &
-  done
-  wait
+function copy_queries()
+{
+  rm -rf ${TPC_H_DIR}/*_sql/queries
+  rm -rf ${TPC_H_DIR}/*_multi_user/queries
+  cp -R ${PWD}/dbgen/queries ${TPC_H_DIR}/*_sql/
+  cp -R ${PWD}/dbgen/queries ${TPC_H_DIR}/*_multi_user/
 }
 
 function check_binary() {

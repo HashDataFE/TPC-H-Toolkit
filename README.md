@@ -89,7 +89,7 @@ This is the default example at [tpch_variables.sh](https://github.com/RyanWei/TP
 # environment options
 ADMIN_USER="gpadmin"
 BENCH_ROLE="hbench"
-SCHEMA_NAME="tpch"
+DB_SCHEMA_NAME="tpch"
 GREENPLUM_PATH=$GPHOME/greenplum_path.sh
 CHIP_TYPE="arm"
 
@@ -127,7 +127,7 @@ STATEMENT_MEM_MULTI_USER='1GB'
 ADMIN_USER="gpadmin"
 ADMIN_USER="gpadmin"
 BENCH_ROLE="hbench"
-SCHEMA_NAME="tpch"
+DB_SCHEMA_NAME="tpch"
 GREENPLUM_PATH=$GPHOME/greenplum_path.sh
 CHIP_TYPE="arm"
 ```

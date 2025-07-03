@@ -72,7 +72,7 @@ printf "\n"
 
 init_log ${step}
 start_log
-schema_name=${SCHEMA_NAME}
+schema_name=${DB_VERSION}
 table_name="gen_data"
 
 if [ "${GEN_NEW_DATA}" == "true" ]; then
@@ -98,10 +98,6 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
   echo "Done generating data"
   echo ""
 fi
-
-echo "Generate queries based on scale"
-cd ${PWD}
-${PWD}/generate_queries.sh
 
 print_log
 

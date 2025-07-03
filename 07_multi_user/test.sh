@@ -36,7 +36,7 @@ function generate_queries()
 		#add explain analyze 
 		echo "print \"set role ${BENCH_ROLE};\\n:EXPLAIN_ANALYZE\\n\" > ${sql_dir}/${filename}"
 
-		printf "set role ${BENCH_ROLE};\nset search_path=${SCHEMA_NAME},public;\n" > ${sql_dir}/${filename}
+		printf "set role ${BENCH_ROLE};\nset search_path=${DB_SCHEMA_NAME},public;\n" > ${sql_dir}/${filename}
 
 		for o in $(cat ${TPC_H_DIR}/01_gen_data/optimizer.txt); do
         	q2=$(echo ${o} | awk -F '|' '{print $1}')

@@ -1,7 +1,7 @@
 # environment options
 export ADMIN_USER="gpadmin"
 export BENCH_ROLE="hbench"
-export SCHEMA_NAME="tpch"
+export DB_SCHEMA_NAME="tpch"
 
 ## Set to "local" to run the benchmark on the COORDINATOR host or "cloud" to run the benchmark from a remote client.
 export RUN_MODEL="local"

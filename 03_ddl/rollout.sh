@@ -12,8 +12,8 @@ init_log ${step}
 get_version
 
 filter="gpdb"
-schema_name=${SCHEMA_NAME}
-ext_schema_name="ext_${SCHEMA_NAME}"
+schema_name=${DB_SCHEMA_NAME}
+ext_schema_name="ext_${DB_SCHEMA_NAME}"
 
 if [ "${VERSION}" == "gpdb_4_3" ] || [ "${VERSION}" == "gpdb_5" ]; then
   distkeyfile="distribution_original.txt"
@@ -97,11 +97,11 @@ fi
 DropRoleDenp="drop owned by ${BENCH_ROLE} cascade"
 DropRole="DROP ROLE IF EXISTS ${BENCH_ROLE}"
 CreateRole="CREATE ROLE ${BENCH_ROLE}"
-GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${SCHEMA_NAME} TO ${BENCH_ROLE}"
-GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${SCHEMA_NAME} TO ${BENCH_ROLE}"
+GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
+GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
 echo "rm -f ${PWD}/GrantTablePrivileges.sql"
 rm -f ${PWD}/GrantTablePrivileges.sql
-psql -tc "select \$\$GRANT ALL PRIVILEGES on table ${SCHEMA_NAME}.\$\$||tablename||\$\$ TO ${BENCH_ROLE};\$\$ from pg_tables where schemaname='${SCHEMA_NAME}'" > ${PWD}/GrantTablePrivileges.sql
+psql -tc "select \$\$GRANT ALL PRIVILEGES on table ${DB_SCHEMA_NAME}.\$\$||tablename||\$\$ TO ${BENCH_ROLE};\$\$ from pg_tables where schemaname='${DB_SCHEMA_NAME}'" > ${PWD}/GrantTablePrivileges.sql
 
 start_log
 
