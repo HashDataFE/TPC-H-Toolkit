@@ -54,6 +54,12 @@ for i in $(ls $PWD/queries/*.sql |  xargs -n 1 basename); do
     fi
 	
 	printf ":EXPLAIN_ANALYZE\n" >> ${TPC_H_DIR}/05_sql/${filename}
+
+	# Check database if postgresql then comment out optimizer settings
+	if [ "${DB_VERSION}" == "postgresql" ]; then
+      sed -i 's/^set optimizer=.*/-- &/' "${TPC_H_DIR}/05_sql/${filename}"
+      sed -i 's/^set statement_mem=.*/-- &/' "${TPC_H_DIR}/05_sql/${filename}"
+    fi
 	
 	cd ${TPC_H_DIR}/05_sql/queries
 	log_time "./qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} $q >> ${TPC_H_DIR}/05_sql/$filename"

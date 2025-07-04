@@ -52,6 +52,11 @@ function generate_queries()
         fi
 		
 		printf ":EXPLAIN_ANALYZE\n" >> ${sql_dir}/${filename}
+
+		if [ "${DB_VERSION}" == "postgresql" ]; then
+          sed -i 's/^set optimizer=.*/-- &/' "${sql_dir}/${filename}"
+          sed -i 's/^set statement_mem=.*/-- &/' "${sql_dir}/${filename}"
+        fi
 		
 		echo "sed -n \"$start_position\",\"$end_position\"p $sql_dir/$tpch_query_name >> $sql_dir/$filename"
 		sed -n "$start_position","$end_position"p $sql_dir/$tpch_query_name >> $sql_dir/$filename
