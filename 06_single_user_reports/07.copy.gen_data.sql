@@ -1,1 +1,1 @@
-\COPY tpch_reports.gen_data FROM :LOGFILE WITH DELIMITER '|';
+\COPY :report_schema.gen_data FROM :LOGFILE WITH DELIMITER '|';
