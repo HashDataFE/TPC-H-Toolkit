@@ -56,10 +56,10 @@ printf "\n"
 
 printf "TPC-H v3.0.1 Performance Metrics\n"
 printf "====================================\n"
-printf "Power@%dGB\t\t%.1f QphH\n" ${SF} ${POWER}
-printf "Throughput@%dGB\t\t%.1f QphH\n" ${SF} ${THROUGHPUT}
-printf "QphH@%dGB\t\t%.1f QphH\n" ${SF} ${QPHH}
-printf "Price/kQphH@%dGB\t\t$%.2f\n" ${SF} ${PRICE_PER_KQPHH}
+printf "%-20s %10.1f QphH\n" "Power@${SF}GB" ${POWER}
+printf "%-20s %10.1f QphH\n" "Throughput@${SF}GB" ${THROUGHPUT}
+printf "%-20s %10.1f QphH\n" "QphH@${SF}GB" ${QPHH}
+printf "%-20s %10.2f\n" "Price/kQphH@${SF}GB" ${PRICE_PER_KQPHH}
 printf "\n"
 
 echo "Finished ${step}"
