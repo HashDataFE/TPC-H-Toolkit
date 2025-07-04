@@ -139,7 +139,7 @@ log_time " 2. Analyze tables"
 
 start_log
 
-id=1
+export id="1"
 schema_name=${DB_SCHEMA_NAME}
 table_name="analyzedb"
 
