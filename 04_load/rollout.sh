@@ -141,7 +141,7 @@ start_log
 
 schema_name=${DB_SCHEMA_NAME}
 table_name="analyzedb"
-id="1"
+id=""
 
 if [ "${RUN_ANALYZE}" == "true" ]; then
 
