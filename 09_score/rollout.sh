@@ -28,21 +28,21 @@ TOTAL_PRICE=1
 # Add v3.0.1 score calculations per TPC-H specification
 # 1. Calculate Power metric (single stream performance)
 # Formula: Power@Size = (22 * SF) / (Query Execution Time in hours)
-POWER=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select cast(22 as decimal) * cast(${SF} as decimal) / (cast(${QUERIES_TIME} as decimal)/3600.0)")
+POWER=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select cast(22 as decimal) * cast(${SF} as decimal) / (cast(${QUERIES_TIME} as decimal)/3600.0)")
 
 # 2. Calculate Throughput metric (multi-stream performance)
 # Formula: Throughput@Size = (S * 22 * 3600) / Ts
 # Where: S = number of query streams, Ts = throughput test elapsed time in seconds
-THROUGHPUT=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select cast(${S_Q} as decimal) * 22 * 3600.0 / cast(${THROUGHPUT_ELAPSED_TIME} as decimal)")
+THROUGHPUT=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select cast(${S_Q} as decimal) * 22 * 3600.0 / cast(${THROUGHPUT_ELAPSED_TIME} as decimal)")
 
 # 3. Calculate composite QphH@Size metric
 # Formula: QphH@Size = sqrt(Power@Size * Throughput@Size)
-QPHH=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select sqrt(cast(${POWER} as decimal) * cast(${THROUGHPUT} as decimal))")
+QPHH=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select sqrt(cast(${POWER} as decimal) * cast(${THROUGHPUT} as decimal))")
 
 # 4. Calculate Price/Performance metric
 # Formula: $/kQphH@Size = (1000 * Total System Price) / QphH@Size
 # Note: TOTAL_PRICE should be set as an environment variable with system cost
-PRICE_PER_KQPHH=$(psql -v ON_ERROR_STOP=1 -q -t -A -c "select 1000 * cast(${TOTAL_PRICE} as decimal) / cast(${QPHH} as decimal)")
+PRICE_PER_KQPHH=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select 1000 * cast(${TOTAL_PRICE} as decimal) / cast(${QPHH} as decimal)")
 
 printf "Number of Streams (Sq)\t\t%d\n" "${S_Q}"
 printf "Scale Factor (SF)\t\t%d\n" "${SF}"

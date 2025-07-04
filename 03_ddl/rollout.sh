@@ -45,8 +45,8 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
       fi
     fi
 
-    log_time "psql -v ON_ERROR_STOP=1 -a -q -P pager=off -f ${i} -v STORAGE_OPTIONS=\"${STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\" -v ext_schema_name=\"${ext_schema_name}\" -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\""
-    psql -v ON_ERROR_STOP=1 -q -q -P pager=off -f ${i} -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}" -v ext_schema_name="${ext_schema_name}" -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}"
+    log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -a -q -P pager=off -f ${i} -v STORAGE_OPTIONS=\"${STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\" -v ext_schema_name=\"${ext_schema_name}\" -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\""
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -q -P pager=off -f ${i} -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}" -v ext_schema_name="${ext_schema_name}" -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}"
     print_log
   done
 
@@ -110,7 +110,7 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
       fi
   
       flag=10
-      for x in $(psql -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
+      for x in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
         CHILD=$(echo ${x} | awk -F '|' '{print $1}')
         EXT_HOST=$(echo ${x} | awk -F '|' '{print $2}')
         PORT=$((GPFDIST_PORT + flag))
@@ -127,8 +127,8 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
       done
       LOCATION+="'"
   
-      log_time "psql -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${i} -v LOCATION=\"${LOCATION}\""
-      psql -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${i} -v LOCATION="${LOCATION}" -v ext_schema_name="${ext_schema_name}"
+      log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${i} -v LOCATION=\"${LOCATION}\""
+      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${i} -v LOCATION="${LOCATION}" -v ext_schema_name="${ext_schema_name}"
   
       print_log
     done
@@ -142,27 +142,27 @@ GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${DB_SCHEMA_NAME} TO ${BEN
 GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
 echo "rm -f ${PWD}/GrantTablePrivileges.sql"
 rm -f ${PWD}/GrantTablePrivileges.sql
-psql -tc "select \$\$GRANT ALL PRIVILEGES on table ${DB_SCHEMA_NAME}.\$\$||tablename||\$\$ TO ${BENCH_ROLE};\$\$ from pg_tables where schemaname='${DB_SCHEMA_NAME}'" > ${PWD}/GrantTablePrivileges.sql
+psql ${PSQL_OPTIONS} -tc "select \$\$GRANT ALL PRIVILEGES on table ${DB_SCHEMA_NAME}.\$\$||tablename||\$\$ TO ${BENCH_ROLE};\$\$ from pg_tables where schemaname='${DB_SCHEMA_NAME}'" > ${PWD}/GrantTablePrivileges.sql
 
 start_log
 
 if [ "${BENCH_ROLE}" != "gpadmin" ]; then
   set +e
   log_time "Drop role dependencies for ${BENCH_ROLE}"
-  psql -v ON_ERROR_STOP=0 -q -P pager=off -c "${DropRoleDenp}"
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${DropRoleDenp}"
   set -e
   log_time "Drop role ${BENCH_ROLE}"
-  psql -v ON_ERROR_STOP=0 -q -P pager=off -c "${DropRole}"
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${DropRole}"
   log_time "Creating role ${BENCH_ROLE}"
-  psql -v ON_ERROR_STOP=0 -q -P pager=off -c "${CreateRole}"
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${CreateRole}"
   log_time "Grant schema privileges to role ${BENCH_ROLE}"
-  psql -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantSchemaPrivileges}"
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantSchemaPrivileges}"
   log_time "Grant table privileges to role ${BENCH_ROLE}"
-  psql -v ON_ERROR_STOP=0 -q -P pager=off -f ${PWD}/GrantTablePrivileges.sql
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -f ${PWD}/GrantTablePrivileges.sql
 fi
 
 #log_time "Set search_path for database gpadmin"
-#psql -v ON_ERROR_STOP=0 -q -P pager=off -c "${SetSearchPath}"
+#psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${SetSearchPath}"
 
 print_log
 
