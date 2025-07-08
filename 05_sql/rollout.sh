@@ -55,6 +55,5 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${BENCH_ROLE}.*.sql" -prin
 	done
 done
 
-echo "Finished ${step}"
 log_time "Step ${step} finished"
 printf "\n"
