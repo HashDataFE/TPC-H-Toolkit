@@ -180,6 +180,5 @@ elif [ "${RUN_MODEL}" == "local" ]; then
   stop_gpfdist
 fi
 
-echo "Finished ${step}"
 log_time "Step ${step} finished"
 printf "\n"
