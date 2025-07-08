@@ -106,7 +106,7 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
     for i in $(ls ${PWD}/*.ext_tpch.*.sql); do
       start_log
   
-      file_name=$(echo ${i} | awk -F '/' '{print $NF}')
+      file_name=$(basename ${i})
       id=$(echo ${file_name} | awk -F '.' '{print $1}')
       schema_name=$(echo ${file_name} | awk -F '.' '{print $2}')
       table_name=$(echo ${file_name} | awk -F '.' '{print $3}')

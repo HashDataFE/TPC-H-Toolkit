@@ -75,7 +75,7 @@ for i in ${sql_dir}/*.sql; do
 	start_log
 	id=${i}
 	schema_name=${session_id}
-	table_name=$(echo ${i} | awk -F '.' '{print $3}')
+	table_name=$(basename ${i} | awk -F '.' '{print $3}')
 	echo $table_name
 	#table_name= $(basename ${i} | awk -F '.' '{print $3}')
 
