@@ -1,296 +1,294 @@
-# Decision Support Benchmark for HashData database.
+# Decision Support Benchmark for HashData Database
 
-This tool is based on the benchmark tool [TPC-H](https://www.tpc.org/tpch/default5.asp).
-This repo contains automation of running the TPC-H benchmark on an existing Hashdata cluster.
+[![TPC-H](https://img.shields.io/badge/TPC--H-v3.0.1-blue)](https://www.tpc.org/tpch/default5.asp)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
-## Context
+A comprehensive tool for running TPC-H benchmarks on HashData / Greenplum / PostgreSQL databases. This implementation automates the execution of the TPC-H benchmark suite, including data generation, schema creation, data loading, and query execution.
 
+## Overview
 
-### Supported TPC-H Versions
+This tool provides:
+- Automated TPC-H benchmark execution
+- Support for both local and cloud deployments
+- Configurable data generation (1GB to 100TB+)
+- Customizable query execution parameters
+- Detailed performance reporting
 
-TPC has published the following TPC-H standards over time:
+## Table of Contents
+- [Decision Support Benchmark for HashData Database](#decision-support-benchmark-for-hashdata-database)
+  - [Overview](#overview)
+  - [Table of Contents](#table-of-contents)
+  - [Quick Start](#quick-start)
+  - [Supported TPC-H Versions](#supported-tpc-h-versions)
+  - [Prerequisites](#prerequisites)
+    - [Tested Products](#tested-products)
+    - [Local Cluster Setup](#local-cluster-setup)
+    - [Remote Client Setup](#remote-client-setup)
+    - [TPC-H Tools Dependencies](#tpc-h-tools-dependencies)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Configuration](#configuration)
+    - [Environment Options](#environment-options)
+    - [Benchmark Options](#benchmark-options)
+    - [Storage Options](#storage-options)
+    - [Step Control Options](#step-control-options)
+    - [Miscellaneous Options](#miscellaneous-options)
+  - [Performance Tuning](#performance-tuning)
+  - [Benchmark Modifications](#benchmark-modifications)
+  - [Troubleshooting](#troubleshooting)
+    - [Common Issues and Solutions](#common-issues-and-solutions)
+    - [Logs and Diagnostics](#logs-and-diagnostics)
+  - [Contributing](#contributing)
+  - [License](#license)
+
+## Quick Start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/hashdata-xyz/TPC-H-HashData.git
+cd TPC-H-HashData
+
+# 2. Configure your environment
+vim tpch_variables.sh
+
+# 3. Run the benchmark
+./run.sh
+```
+
+### Local Mode Guide
+For running tests on MPP Architecture (Cloudberry / Greenplum / HashData Lightning):
+
+1. Set `RUN_MODEL="local"` in `tpch_variables.sh`
+2. Configure database connection parameters
+3. Run with `./tpch.sh`
+
+### Cloud Mode Guide
+For running tests on PostgreSQL compatible databases (Hashdata Enterprise, SynxDB Elastic):
+
+1. Set `RUN_MODEL="cloud"` in `tpch_variables.sh`
+2. Configure `PSQL_OPTIONS`, `CLIENT_GEN_PATH`, and `CLIENT_GEN_PARALLEL`
+3. Run with `./tpch.sh`
+
+## Supported TPC-H Versions
+
 | TPC-H Benchmark Version | Published Date | Standard Specification |
 |-|-|-|
-| 3.0.0 (latest) | 2021/02/18 | https://tpc.org/TPC_Documents_Current_Versions/pdf/tpc-h_v3.0.0.pdf|
+| 3.0.1 (latest) | 2021/02/18 | [PDF](https://tpc.org/TPC_Documents_Current_Versions/pdf/tpc-h_v3.0.0.pdf)|
+| 2.18.0 | 2017/06/12 | [PDF](https://tpc.org/tpc_documents_current_versions/pdf/tpc-h_v2.18.0.pdf)|
 
+This tool uses TPC-H 3.0.1 as the default benchmark specification.
 
-## Setup
-### Prerequisites
+## Prerequisites
 
-1. A running HashData Database with `gpadmin` access
-2. `gpadmin` database is created
-3. `root` access on the master node `mdw` for installing dependencies
-4. `ssh` connections between `mdw` and the segment nodes `sdw1..n`
+### Tested Products
+- HashData Enterprise / HashData Lightning
+- Greenplum 4.x / Greenplum 5.x / Greenplum 6.x / Greenplum 7.x
+- Cloudberry Database 1.x / 2.x
+- PostgreSQL 12+ (limited support)
 
-All the following examples are using standard host name convention of HashData using `mdw` for master node, and `sdw1..n` for the segment nodes.
+### Local Cluster Setup
+For running tests directly on the coordinator host:
+
+1. Set `RUN_MODEL="local"` in `tpch_variables.sh`
+2. Ensure you have a running HashData Database with `gpadmin` access
+3. Create `gpadmin` database
+4. Configure password-less `ssh` between `mdw` (coordinator) and segment nodes (`sdw1..n`)
+
+### Remote Client Setup
+For running tests from a remote client:
+
+1. Set `RUN_MODEL="cloud"` in `tpch_variables.sh`
+2. Install `psql` client with passwordless access (`.pgpass`)
+3. Configure required variables:
+   ```bash
+   export RANDOM_DISTRIBUTION="true"
+   export TABLE_STORAGE_OPTIONS="compresstype=zstd, compresslevel=5"
+   export CLIENT_GEN_PATH="/tmp/dsbenchmark"
+   export CLIENT_GEN_PARALLEL="2"
+   ```
 
 ### TPC-H Tools Dependencies
-
-Make sure that gcc and make are intalled on `mdw` for compiling the `dbgen` (data generation) and `qgen` (query generation).
-
-You can install the dependencies on `mdw`:
+Install the dependencies on `mdw` for compiling the `dbgen` (data generation) and `qgen` (query generation) tools:
 
 ```bash
 ssh root@mdw
 yum -y install gcc make
 ```
 
-The original source code is from http://tpc.org/tpc_documents_current_versions/current_specifications5.asp.
+The original source code is from the [TPC website](http://tpc.org/tpc_documents_current_versions/current_specifications5.asp).
 
-### Download and Install
+## Installation
 
-You can get released version from the .tar file:
-
-```
-curl -LO  https://github.com/hashdata-xyz/TPC-H-HashData/archive/refs/tags/v1.4.tar.gz
-tar xzf v1.4.tar.gz
-mv TPC-H-HashData-1.4 TPC-H-HashData
-```
-
-OR get the current version by downloading with git:
+Clone the repository with Git:
 
 ```bash
 ssh gpadmin@mdw
 git clone https://github.com/hashdata-xyz/TPC-H-HashData.git
 ```
 
-Put the folder under /home/gpadmin/ and change owner to gpadmin.
+Place the folder under `/home/gpadmin/` and set ownership:
 
+```bash
+chown -R gpadmin:gpadmin TPC-H-HashData
 ```
-chown -R gpadmin.gpadmin TPC-H-HashData
-```
 
+## Usage
 
-### Execution
+To run the benchmark interactively:
 
-To run the benchmark, login as `gpadmin` on `mdw`:
-
-```
+```bash
 ssh gpadmin@mdw
 cd ~/TPC-H-HashData
 ./tpch.sh
 ```
 
-Or running the benchmark as a background process:
+To run in the background with logging:
 
 ```bash
-sh run.sh
+nohup ./run.sh > tpch_$(date +%Y%m%d_%H%M%S).log 2>&1 &
 ```
 
-By default, it will run a scale 1 (1G) and with 2 concurrent users, from data generation to score computation.
+By default, this will run a scale 1 (1GB) benchmark with 2 concurrent users, executing all steps from data generation through reporting.
 
-### Configuration Options
+## Configuration
 
-By changing the `tpch_variables.sh`, we can control how this benchmark will run.
+The benchmark is controlled through the `tpch_variables.sh` file with the following key sections:
 
-This is the default example at [tpch_variables.sh](https://github.com/RyanWei/TPC-H-HashData/blob/main/tpch_variables.sh)
+### Environment Options
+```bash
+# Core settings
+export ADMIN_USER="gpadmin"
+export BENCH_ROLE="hbench"
+export DB_SCHEMA_NAME="tpch"
 
-```shell
-# environment options
-ADMIN_USER="gpadmin"
-BENCH_ROLE="hbench"
-DB_SCHEMA_NAME="tpch"
-GREENPLUM_PATH=$GPHOME/greenplum_path.sh
-CHIP_TYPE="arm"
+export RUN_MODEL="local"  # "local" or "cloud"
 
-# benchmark options
-GEN_DATA_SCALE="1"
-MULTI_USER_COUNT="2"
+export PSQL_OPTIONS="-h hostname -p 5432"  # Database connection options
 
-# step options
-RUN_COMPILE_tpch="true"
-RUN_GEN_DATA="true"
-RUN_INIT="true"
-RUN_DDL="true"
-RUN_LOAD="true"
-RUN_SQL="true"
-RUN_SINGLE_USER_REPORTS="true"
-RUN_MULTI_USER="true"
-RUN_MULTI_USER_REPORTS="true"
-RUN_SCORE="true"
+# Cloud mode settings
+export CLIENT_GEN_PATH="/tmp/dsbenchmark"  # Location for data generation
+export CLIENT_GEN_PARALLEL="2"             # Parallel data generation processes
 
-# misc options
-SINGLE_USER_ITERATIONS="1"
-EXPLAIN_ANALYZE="false"
-RANDOM_DISTRIBUTION="false"
-ORCA_OPTIMIZER="true"
-STATEMENT_MEM="2GB"
-STATEMENT_MEM_MULTI_USER='1GB'
+# Local mode settings
+export LOCAL_GEN_PARALLEL="1"  # Parallel processes per segment
 ```
 
-`tpch.sh` will validate existence of those variables.
-
-#### Environment Options
-
-```shell
-# environment options
-ADMIN_USER="gpadmin"
-ADMIN_USER="gpadmin"
-BENCH_ROLE="hbench"
-DB_SCHEMA_NAME="tpch"
-GREENPLUM_PATH=$GPHOME/greenplum_path.sh
-CHIP_TYPE="arm"
+### Benchmark Options
+```bash
+# Scale and concurrency
+export GEN_DATA_SCALE="1"      # Data scale factor (1 = 1GB)
+export MULTI_USER_COUNT="2"    # Number of concurrent users
 ```
 
-These are the setup related variables:
-- `ADMIN_USER`: default `gpadmin`.
-  It is the default database administrator account, as well as the user accessible to all `mdw` and `sdw1..n` machines.
-- `CHIP_TYPE`: default `arm`, can be set to `x86`. 
-  Set this according to the CPU type of the machince running this test. If included binaries works, compiling will be skipped, otherwise, will try to compile from source code. 
-  
-  Included binaries: x86 on Centos7 and ARM on Centos7.
+For large scale tests, recommended configurations:
+- 3TB: `GEN_DATA_SCALE="3000"` with `MULTI_USER_COUNT="5"`
+- 10TB: `GEN_DATA_SCALE="10000"` with `MULTI_USER_COUNT="7"`
+- 30TB: `GEN_DATA_SCALE="30000"` with `MULTI_USER_COUNT="10"`
 
-  Note: The benchmark related files for each segment node are located in the segment's `${PGDATA}/hbenchmark` directory.
-  If there isn't enough space in this directory in each segment, you can create a symbolic link to a drive location that does have enough space.
+### Storage Options
+```bash
+# Table storage format
+export TABLE_ACCESS_METHOD="ao_column"  # Options: heap/ao_row/ao_column/pax
 
-In most cases, we just leave them to the default.
+export TABLE_STORAGE_OPTIONS="WITH (appendonly=true, orientation=column, compresstype=zstd, compresslevel=5, blocksize=1048576)"
 
-#### Benchmark Options
-
-```shell
-# benchmark options
-GEN_DATA_SCALE="1"
-MULTI_USER_COUNT="2"
+export TABLE_USE_PARTITION="false"  # Enable partitioning for large tables
 ```
 
-These are the benchmark controlling variables:
-- `GEN_DATA_SCALE`: default `1`.
-  Scale 1 is 1G.
-- `MULTI_USER_COUNT`: default `2`.
-  It's also usually referred as `CU`, i.e. concurrent user.
-  It controls how many concurrent streams to run during the throughput run.
+Table distribution keys are defined in `03_ddl/distribution.txt`. You can modify tables' distribution keys by changing this file, setting distribution method to hash with column names or "REPLICATED".
 
+### Step Control Options
+```bash
+# Setup and compilation
+export RUN_COMPILE_TPCH="true"  # Compile data/query generators
+export RUN_INIT="true"         # Initialize cluster settings
 
-If evaluating Greenplum cluster across different platforms, we recommend to change this section to 3TB with 5CU:
-```shell
-# benchmark options
-MULTI_USER_COUNT="5"
-GEN_DATA_SCALE="3000"
-```
-#### Step Options
+# Data generation and loading
+export RUN_GEN_DATA="true"      # Generate test data
+export GEN_NEW_DATA="true"      # Generate new data (when RUN_GEN_DATA=true)
+export RUN_DDL="true"           # Create database schemas/tables
+export DROP_EXISTING_TABLES="true"  # Drop existing tables (when RUN_DDL=true)
+export RUN_LOAD="true"          # Load generated data
+export RUN_ANALYZE="true"       # Analyze tables after loading
 
-```shell
-# step options
-RUN_COMPILE_tpch="true"
-RUN_GEN_DATA="true"
-RUN_INIT="true"
-RUN_DDL="true"
-RUN_LOAD="true"
-RUN_SQL="true"
-RUN_SINGLE_USER_REPORT="true"
-RUN_MULTI_USER="true"
-RUN_MULTI_USER_REPORTS="true"
-RUN_SCORE="true"
+# Query execution
+export RUN_SQL="true"                 # Run power test queries
+export RUN_QGEN="true"                # Generate query streams
+export RUN_SINGLE_USER_REPORTS="true" # Generate single-user reports
+
+export RUN_MULTI_USER="false"         # Run throughput test queries
+export RUN_MULTI_USER_QGEN="true"     # Generate multi-user queries
+export RUN_MULTI_USER_REPORTS="false" # Generate multi-user reports
+export RUN_SCORE="false"              # Compute final benchmark score
 ```
 
-There are multiple steps running the benchmark and controlled by these variables:
-- `RUN_COMPILE_tpch`: default `true`.
-  It will compile the `dbgen` and `qgen`.
-  Usually we only want to compile those binaries once.
-  In the rerun, just set this value to `false`.
-- `RUN_GEN_DATA`: default `true`.
-  It will use the `dbgen` compiled above to generate the flat files for the benchmark.
-  The flat files are generated in parallel on all segment nodes.
-  Those files are stored under `${PGDATA}/hbenchmark` directory.
-  In the rerun, just set this value to `false`.
-- `RUN_INIT`: default `true`.
-  It will setup the GUCs for the Greenplum as well as remember the segment configurations.
-  It's only required if the Greenplum cluster is reconfigured.
-  It can be always `true` to ensure proper Greenplum cluster configuration.
-  In the rerun, just set this value to `false`.
-- `RUN_DDL`: default `true`.
-  It will recreate all the schemas and tables (including external tables for loading).
-  If you want to keep the data and just rerun the queries, please set this value to `false`, otherwise all the existing loaded data will be gone.
-- `RUN_LOAD`: default `true`.
-  It will load data from flat files into tables.
-  After the load, the statistics will be computed in this step.
-  If you just want to rerun the queries, please set this value to `false`.
-- `RUN_SQL`: default `true`.
-  It will run the power test of the benchmark.
-- `RUN_SINGLE_USER_REPORTS`: default `true`.
-  It will upload the results to the Greenplum database `gpadmin` under schema `tpch_reports`.
-  These tables are required later on in the `RUN_SCORE` step.
-  Recommend to keep it `true` if above step of `RUN_SQL` is `true`.
-- `RUN_MULTI_USER`: default `true`.
-  It will run the throughput run of the benchmark.
-  Before running the queries, multiple streams will be generated by the `qgen`.
-  `qgen` will sample the database to find proper filters.
-  For very large database and a lot of streams, this process can take a long time (hours) to just generate the queries.
-- `RUN_MULTI_USER_REPORTS`: default `true`.
-  It will upload the results to the Greenplum database `gpadmin` under schema `tpch_reports`.
-  Recommend to keep it `true` if above step of `RUN_MULTI_USER` is `true`.
-- `RUN_SCORE`: default `true`.
-  Run this step will print summary for this execution.
-  todo: It will query the results from `tpch_reports` and compute the `QphDS` based on supported benchmark standard.
-  This function is not supported in the current version as this tool currently only support query tests not refresh functions yet. 
-
-
-If any above variable is missing or invalid, the script will abort and show the missing or invalid variable name.
-
-**WARNING**: Now TPC-H does not rely on the log folder to run or skip the steps. It will only run the steps that are specified explicitly as `true`  in the `tpch_variables.sh`. If any necessary step is speficied as `false` but has never been executed before, the script will abort when it tries to access something that does not exist in the database or under the directory.
-
-#### Miscellaneous Options
-
-```shell
-# Misc options
-export SINGLE_USER_ITERATIONS="1"
-export EXPLAIN_ANALYZE="false"
-export ENABLE_VECTORIZATION="off"
-export RANDOM_DISTRIBUTION="false"
-export STATEMENT_MEM="2GB"
-export STATEMENT_MEM_MULTI_USER="1GB"
-## Set gpfdist location where gpfdist will run p (primary) or m (mirror)
-export GPFDIST_LOCATION="p"
-export OSVERSION=$(uname)
-export ADMIN_USER=$(whoami)
-export ADMIN_HOME=$(eval echo ${HOME}/${ADMIN_USER})
-export MASTER_HOST=$(hostname -s)
-export LD_PRELOAD=/lib64/libz.so.1 ps
+### Miscellaneous Options
+```bash
+export SINGLE_USER_ITERATIONS="1"      # Number of power test iterations
+export EXPLAIN_ANALYZE="false"         # Enable query plan analysis
+export ENABLE_VECTORIZATION="off"      # Enable vectorized execution
+export RANDOM_DISTRIBUTION="false"     # Use random distribution for fact tables
+export STATEMENT_MEM="1.9GB"           # Memory per statement (single-user)
+export STATEMENT_MEM_MULTI_USER="1GB"  # Memory per statement (multi-user)
+export GPFDIST_LOCATION="p"            # gpfdist location (p=primary, m=mirror)
 ```
 
-These are miscellaneous controlling variables:
-- `EXPLAIN_ANALYZE`: default `false`.
-  If you set to `true`, you can have the queries execute with `EXPLAIN ANALYZE` in order to see exactly the query plan used, the cost, the memory used, etc.
-  This option is for debugging purpose only, since collecting those query statistics will disturb the benchmark.
-- `RANDOM_DISTRIBUTION`: default `false`.
-  If you set to `true`, the fact tables are distributed randomly other than following a pre-defined distribution column.
-- `SINGLE_USER_ITERATION`: default `1`.
-  This controls how many times the power test will run.
-  During the final score computation, the minimal/fastest query elapsed time of multiple runs will be used.
-  This can be used to ensure the power test is in a `warm` run environment.
-- `STATEMENT_MEM`: default 2GB which set the `statement_mem` parameter for each statement of single user test. Set with `GB` or `MB`. STATEMENT_MEM should be less than gp_vmem_protect_limit.
-- `STATEMENT_MEM_MULTI_USER`: default 1GB which set the `statement_mem` parameter for each statement of multiple user test. Set with `GB` or `MB`. Please note that, `STATEMENT_MEM_MULTI_USER` * `MULTI_USER_COUNT` should be less than `gp_vmem_protect_limit`.
-- `ENABLE_VECTORIZATION`: set to true to enable vectorization computing for better performance. Feature is suppported as of Lightning 1.5.3. Default is false. Only works for AO with column and PAX table type.
+## Performance Tuning
 
+For optimal benchmark performance, consider these recommendations:
 
-#### Storage Options
+### Memory Settings
+```bash
+# For systems with 100GB+ RAM
+export STATEMENT_MEM="8GB"
+export STATEMENT_MEM_MULTI_USER="4GB"
+```
 
-Table storage options are defined with following controlling variables for optimal performance.
-```shell
-# Storage options
-## Set to heap/ao_row/ao_column/pax for different table format
+### Storage Optimization
+```bash
+# Enable columnar storage with compression
 export TABLE_ACCESS_METHOD="ao_column"
-## Set different storage options for each access method
-export TABLE_STORAGE_OPTIONS="appendoptimized=true compresstype=zstd, compresslevel=5, blocksize=1048576"
+export TABLE_STORAGE_OPTIONS="WITH (compresstype=zstd, compresslevel=9)"
+export TABLE_USE_PARTITION="true"
 ```
-- `TABLE_ACCESS_METHOD`: define the table type for the test, available options are HEAP, AO with row, AO with column and PAX (supported as of Lightning 1.5.3).  
-- `TABLE_STORAGE_OPTIONS`: more storage configurations could be defiend, options are different for each table type, refer to docuemntation for more detail.
 
-Table distribution keys are defined in `../03_ddl/distribution.txt`, you can modify tables' distribution keys by changing this file. You can set the distribution method to hash with colunm names or "REPLICATED".
+### Concurrency Tuning
+```bash
+# Adjust based on available CPU cores
+export CLIENT_GEN_PARALLEL="$(nproc)"
+export MULTI_USER_COUNT="$(( $(nproc) / 2 ))"
+```
 
-#### Play with different options
-- Change different storage options in `functions.sh` to try with different compress options and whether use AO/CO storage.
-- Replace some of the tables' DDL with the `*.sql.partition` files in folder `03_ddl` to use partition for some of the non-dimension tables. No partition is used by default.
-- Steps `RUN_COMPILE_tpch` and `RUN_GEN_DATA` only need to be executed once. 
-- ORCA optimizer can be adjusted by changing the file `../TPC-H-Hashdata/01_gen_data/optimizer.txt`. You can turn ORCA `on` or `off` for all 22 queries by changing appropriate row of this file.
+### Enable Vectorization
+For supported systems (Lightning 1.5.3+):
+```bash
+export ENABLE_VECTORIZATION="on"
+```
 
+## Benchmark Modifications
 
-## Benchmark Minor Modifications
+The following modifications were made to the standard TPC-H queries for compatibility:
 
-### Change to SQL queries that subtracted or added days were modified slightly:
+1. **Query 15**: Using alternative version for easier parsing while maintaining performance characteristics
+2. **Date Interval Syntax**: Changed date arithmetic to use PostgreSQL-compatible interval syntax
+3. **Query 1**: Hard-coded 90-day range due to substitution issues with qgen
 
-1. Query alternative 15 was used in favor of the original so it is easier to parse in
-these scripts.  Performance is essentially the same for both versions.
-2. Query 1 documentation doesn't match query provided by TPC.  Range is supposed to be
-dynamically set between 60 and 120 days and substitution doesn't seem to be working
-with qgen.  So, hard code 90 days until this can be fixed by TPC.
+## Troubleshooting
+
+### Common Issues and Solutions
+
+1. **Missing Dependencies**
+   - Ensure `gcc` and `make` are installed on all nodes
+   - Verify password-less SSH between coordinator and segments
+
+2. **Permission Errors**
+   - Verify ownership: `chown -R gpadmin:gpadmin /home/gpadmin/TPC-H-HashData`
+   - Ensure sufficient disk space in data directories
+
+3. **Configuration Validation**
+   The script will abort and display any missing or invalid variables in `tpch_variables.sh`
+
+### Logs and Diagnostics
+- Main log file: Generated when using `run.sh` with timestamp
+- Database server logs: Check PostgreSQL/Greenplum log directory
+- Step-specific logs: Located in respective step directories (01_gen_data, 03_ddl, etc.)
