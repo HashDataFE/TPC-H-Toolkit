@@ -33,6 +33,23 @@ psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -t -A -c "select 'analyze ' || n.nspname
 psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -P pager=off -f ${PWD}/detailed_report.sql
 echo ""
 
+CONCURRENT_QUERY_TIME=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select round(sum(extract('epoch' from duration))) from tpch_testing.sql")
+THROUGHPUT_ELAPSED_TIME=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select max(end_epoch_seconds) - min(start_epoch_seconds) from tpch_testing.sql")
+
+S_Q=${MULTI_USER_COUNT}
+SF=${GEN_DATA_SCALE}
+
+echo "********************************************************************************"
+echo "Summary"
+echo "********************************************************************************"
+echo ""
+printf "Number of Streams (Sq)\t\t%d\n" "${S_Q}"
+printf "Scale Factor (SF)\t\t%d\n" "${SF}"
+printf "Sum of Elapse Time for all Concurrent Queries (seconds)\t%d\n" "${CONCURRENT_QUERY_TIME}"
+printf "Throughput Test Elapsed Time (seconds)\t%d\n" "${THROUGHPUT_ELAPSED_TIME}"
+printf "\n"
+echo "********************************************************************************"
+
 echo "Finished ${step}"
 
 log_time "Step ${step} finished"
