@@ -1,1 +1,1 @@
-COPY :schema_name.region FROM :filename WITH DELIMITER '|' NULL '';
+COPY :DB_SCHEMA_NAME.region FROM :filename WITH DELIMITER '|' NULL '';

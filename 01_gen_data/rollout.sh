@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+#set -e
 
 PWD=$(get_pwd ${BASH_SOURCE[0]})
 
@@ -23,10 +23,10 @@ function get_count_generate_data() {
 }
 
 function kill_orphaned_data_gen() {
-  echo "kill any orphaned dsdgen processes on segment hosts"
+  echo "kill any orphaned dbgen processes on segment hosts"
   # always return true even if no processes were killed
   for i in $(cat ${TPC_H_DIR}/segment_hosts.txt); do
-    ssh ${i} "pkill dsdgen" || true &
+    ssh ${i} "pkill dbgen" || true &
   done
   wait
 }
@@ -53,7 +53,7 @@ function gen_data() {
   else
     SQL_QUERY="select row_number() over(), g.hostname, g.datadir from gp_segment_configuration g where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' order by 1, 2, 3"
   fi
-  for i in $(psql -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
+  for i in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
     CHILD=$(echo ${i} | awk -F '|' '{print $1}')
     EXT_HOST=$(echo ${i} | awk -F '|' '{print $2}')
     GEN_DATA_PATH=$(echo ${i} | awk -F '|' '{print $3}' | sed 's#//#/#g')
@@ -72,36 +72,71 @@ printf "\n"
 
 init_log ${step}
 start_log
-schema_name=${SCHEMA_NAME}
+schema_name=${DB_VERSION}
 table_name="gen_data"
 
 if [ "${GEN_NEW_DATA}" == "true" ]; then
-  kill_orphaned_data_gen
-  copy_generate_data
-  gen_data
-  echo "Current database running this test is ${VERSION}"
-  echo ""
-  get_count_generate_data
-  echo "Now generating data.  This may take a while."
-  seconds=0
-  echo -ne "Generating data duration: "
-  tput sc
-  while [ "$count" -gt "0" ]; do
-    tput rc
-    echo -ne "${seconds} second(s)"
-    sleep 5
-    seconds=$(( seconds + 5 ))
-    get_count_generate_data
-  done
+  if [ "${RUN_MODEL}" != "local" ]; then
+    PARALLEL=${CLIENT_GEN_PARALLEL}
+    CHILD=1
+    GEN_DATA_PATH="${CLIENT_GEN_PATH}"
 
+    if [[ ! -d "${GEN_DATA_PATH}" && ! -L "${GEN_DATA_PATH}" ]]; then
+      log_time "mkdir ${GEN_DATA_PATH}"
+      mkdir ${GEN_DATA_PATH}
+    fi
+    rm -rf ${GEN_DATA_PATH}/*
+    mkdir -p ${GEN_DATA_PATH}/logs
+
+    while [ ${CHILD} -le ${PARALLEL} ]; do
+      mkdir -p ${GEN_DATA_PATH}/${CHILD}
+      cp ${PWD}/dbgen ${PWD}/dists.dss ${GEN_DATA_PATH}/${CHILD}/
+      cd ${GEN_DATA_PATH}/${CHILD}/
+      log_time "${GEN_DATA_PATH}/${CHILD}/dbgen -f -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &"
+      ${GEN_DATA_PATH}/${CHILD}/dbgen -f -s ${GEN_DATA_SCALE} -C ${PARALLEL} -S ${CHILD} > ${GEN_DATA_PATH}/logs/tpch.generate_data.${CHILD}.log 2>&1 &
+      CHILD=$((CHILD + 1))
+    done
+    wait
+    
+    #Adjust data files to remove duplicate data for region and nation
+    CHILD=1
+    while [ ${CHILD} -le ${PARALLEL} ]; do  
+      if [ "$CHILD" -eq "1" ]; then
+        mv ${GEN_DATA_PATH}/${CHILD}/nation.tbl ${GEN_DATA_PATH}/${CHILD}/nation.tbl.${CHILD}
+        mv ${GEN_DATA_PATH}/${CHILD}/region.tbl ${GEN_DATA_PATH}/${CHILD}/region.tbl.${CHILD}
+      fi
+      if [ "$CHILD" -gt "1" ]; then
+        rm -f ${GEN_DATA_PATH}/${CHILD}/nation.tbl
+        rm -f ${GEN_DATA_PATH}/${CHILD}/region.tbl
+        touch ${GEN_DATA_PATH}/${CHILD}/nation.tbl.${CHILD}
+        touch ${GEN_DATA_PATH}/${CHILD}/region.tbl.${CHILD}
+      fi
+      CHILD=$((CHILD + 1))
+    done
+  else
+    kill_orphaned_data_gen
+    copy_generate_data
+    gen_data
+    echo "Current database running this test is ${VERSION}"
+    echo ""
+    get_count_generate_data
+    echo "Now generating data.  This may take a while."
+    seconds=0
+    echo -ne "Generating data duration: "
+    tput sc
+    while [ "$count" -gt "0" ]; do
+      tput rc
+      echo -ne "${seconds} second(s)"
+      sleep 5
+      seconds=$(( seconds + 5 ))
+      get_count_generate_data
+    done
+  fi
+    
   echo ""
-  echo "Done generating data"
+  log_time "Done generating data"
   echo ""
 fi
-
-echo "Generate queries based on scale"
-cd ${PWD}
-${PWD}/generate_queries.sh
 
 print_log
 

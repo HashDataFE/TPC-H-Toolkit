@@ -1,4 +1,4 @@
 SELECT split_part(description, '.', 1) as schema_name, round(extract('epoch' from duration)) AS seconds 
-FROM tpch_reports.sql 
+FROM :report_schema.load
 WHERE id = 1
 ORDER BY 1;

@@ -36,7 +36,7 @@ function generate_queries()
 		#add explain analyze 
 		echo "print \"set role ${BENCH_ROLE};\\n:EXPLAIN_ANALYZE\\n\" > ${sql_dir}/${filename}"
 
-		printf "set role ${BENCH_ROLE};\nset search_path=${SCHEMA_NAME},public;\n" > ${sql_dir}/${filename}
+		printf "set role ${BENCH_ROLE};\nset search_path=${DB_SCHEMA_NAME},public;\n" > ${sql_dir}/${filename}
 
 		for o in $(cat ${TPC_H_DIR}/01_gen_data/optimizer.txt); do
         	q2=$(echo ${o} | awk -F '|' '{print $1}')
@@ -52,6 +52,11 @@ function generate_queries()
         fi
 		
 		printf ":EXPLAIN_ANALYZE\n" >> ${sql_dir}/${filename}
+
+		if [ "${DB_VERSION}" == "postgresql" ]; then
+          sed -i 's/^set optimizer=.*/-- &/' "${sql_dir}/${filename}"
+          sed -i 's/^set statement_mem=.*/-- &/' "${sql_dir}/${filename}"
+        fi
 		
 		echo "sed -n \"$start_position\",\"$end_position\"p $sql_dir/$tpch_query_name >> $sql_dir/$filename"
 		sed -n "$start_position","$end_position"p $sql_dir/$tpch_query_name >> $sql_dir/$filename
@@ -61,7 +66,7 @@ function generate_queries()
 	rm -f ${sql_dir}/${tpch_query_name}
 }
 
-if [ "${RUN_QGEN}" = "true" ]; then
+if [ "${RUN_MULTI_USER_QGEN}" = "true" ]; then
   generate_queries
 fi
 
@@ -70,19 +75,19 @@ for i in ${sql_dir}/*.sql; do
 	start_log
 	id=${i}
 	schema_name=${session_id}
-	table_name=$(echo ${i} | awk -F '.' '{print $3}')
+	table_name=$(basename ${i} | awk -F '.' '{print $3}')
 	echo $table_name
 	#table_name= $(basename ${i} | awk -F '.' '{print $3}')
 
 	if [ "${EXPLAIN_ANALYZE}" == "false" -o "${table_name}" == "15" ]; then
-		log_time "psql -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE="" -f ${i} | wc -l"
-		tuples=$(psql -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE="" -f ${i} | wc -l; exit ${PIPESTATUS[0]})
+		log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE="" -f ${i} | wc -l"
+		tuples=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE="" -f ${i} | wc -l; exit ${PIPESTATUS[0]})
 		tuples=$((tuples - 1))
 	else
 		myfilename=$(basename ${i})
 		mylogfile="${TPC_H_DIR}/log/${session_id}.${myfilename}.multi.explain_analyze.log"
-		log_time "psql -v ON_ERROR_STOP=1 -A -e -q -t -P pager=off -v EXPLAIN_ANALYZE=\"EXPLAIN ANALYZE\" -f ${i}"
-		psql -v ON_ERROR_STOP=1 -A -e -q -t -P pager=off -v EXPLAIN_ANALYZE="EXPLAIN ANALYZE" -f ${i} > ${mylogfile}
+		log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -e -q -t -P pager=off -v EXPLAIN_ANALYZE=\"EXPLAIN ANALYZE\" -f ${i}"
+		psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -e -q -t -P pager=off -v EXPLAIN_ANALYZE="EXPLAIN ANALYZE" -f ${i} > ${mylogfile}
 		tuples="0"
 	fi
 		

@@ -10,6 +10,22 @@ step="multi_user"
 log_time "Step ${step} started"
 printf "\n"
 
+# define data loding log file
+LOG_FILE="${TPC_H_DIR}/log/rollout_load.log"
+
+# Handle RNGSEED configuration
+if [ "${UNIFY_QGEN_SEED}" == "true" ]; then
+  # Use a fixed RNGSEED when unified seed is enabled
+  RNGSEED=2016032410
+else 
+  # Get RNGSEED from log file or use default
+  if [[ -f "$LOG_FILE" ]]; then
+    RNGSEED=$(tail -n 1 "$LOG_FILE" | cut -d '|' -f 6)
+  else
+    RNGSEED=2016032410
+  fi
+fi
+
 if [ "${MULTI_USER_COUNT}" -eq "0" ]; then
 	echo "MULTI_USER_COUNT set at 0 so exiting..."
 	exit 0
@@ -21,7 +37,7 @@ function get_psql_count()
 }
 
 function get_running_jobs_count() {
-  job_count=$(ps -fu "${ADMIN_USER}" | grep -c "07_multi_user/test.sh" || true)
+  job_count=$(ps -fu "${ADMIN_USER}" |grep -v grep |grep "07_multi_user/test.sh"|wc -l || true)
   echo "${job_count}"
 }
 
@@ -59,9 +75,9 @@ function generate_templates()
 	cd ${PWD}/queries
 	
 	for i in $(seq 1 $MULTI_USER_COUNT); do
-		echo "rm -f $CurrentPath/*.sql"
-		echo "./qgen -d -s ${GEN_DATA_SCALE} -p $i -c -v > $CurrentPath/query_$i.sql"
-		${PWD}/qgen -d -s ${GEN_DATA_SCALE} -p $i -c -v > $CurrentPath/query_$i.sql
+		log_time "rm -f $CurrentPath/*.sql"
+		log_time "./qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} -p $i -c -v > $CurrentPath/query_$i.sql"
+		${PWD}/qgen -d -r ${RNGSEED} -s ${GEN_DATA_SCALE} -p $i -c -v > $CurrentPath/query_$i.sql
 	done
 	
 	cd ..
@@ -77,7 +93,7 @@ function generate_templates()
 	done
 }
 
-if [ "${RUN_QGEN}" = "true" ]; then
+if [ "${RUN_MULTI_USER_QGEN}" = "true" ]; then
   generate_templates
 fi
 
@@ -94,12 +110,12 @@ seconds=0
 echo -n "Multi-user query duration: "
 tput sc
 running_jobs_count=$(get_running_jobs_count)
-while [ ${running_jobs_count} -gt 1 ]; do
+while [ ${running_jobs_count} -gt 0 ]; do
   tput rc
   echo -n "${seconds} second(s)"
-  sleep 5
+  sleep 15
   running_jobs_count=$(get_running_jobs_count)
-  seconds=$((seconds + 5))
+  seconds=$((seconds + 15))
 done
 
 echo ""

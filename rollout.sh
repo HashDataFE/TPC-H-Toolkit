@@ -22,38 +22,27 @@ create_directories
 echo "############################################################################"
 echo "TPC-H Script for Greenplum Database."
 echo "############################################################################"
-echo ""
+echo "All parameter settings:"
 echo "############################################################################"
-echo "GEN_DATA_SCALE: ${GEN_DATA_SCALE}"
-echo "EXPLAIN_ANALYZE: ${EXPLAIN_ANALYZE}"
-echo "RANDOM_DISTRIBUTION: ${RANDOM_DISTRIBUTION}"
-echo "MULTI_USER_COUNT: ${MULTI_USER_COUNT}"
-echo "RUN_COMPILE_TPCH: ${RUN_COMPILE_TPCH}"
-echo "RUN_GEN_DATA: ${RUN_GEN_DATA}"
-echo "GEN_NEW_DATA: ${GEN_NEW_DATA}"
-echo "RUN_INIT: ${RUN_INIT}"
-echo "RUN_DDL: ${RUN_DDL}"
-echo "DROP_EXISTING_TABLES: ${DROP_EXISTING_TABLES}"
-echo "RUN_LOAD: ${RUN_LOAD}"
-echo "RUN_ANALYZE: ${RUN_ANALYZE}"
-echo "RUN_SQL: ${RUN_SQL}"
-echo "SINGLE_USER_ITERATIONS: ${SINGLE_USER_ITERATIONS}"
-echo "RUN_SINGLE_USER_REPORTS: ${RUN_SINGLE_USER_REPORTS}"
-echo "RUN_MULTI_USER: ${RUN_MULTI_USER}"
-echo "RUN_MULTI_USER_REPORTS: ${RUN_MULTI_USER_REPORTS}"
-echo "BENCH_ROLE: ${BENCH_ROLE}"
-echo "GPFDIST_LOCATION: ${GPFDIST_LOCATION}"
+
+grep -E '^[[:space:]]*export[[:space:]]+' tpch_variables.sh | grep -v '^[[:space:]]*#' | while read -r line; do
+  var_name=$(echo "$line" | awk '{print $2}' | cut -d= -f1)
+  printf "%s: %s\n" "$var_name" "${!var_name}"
+done
+
 echo "############################################################################"
 echo ""
 
-# We assume that the flag variable names are consistent with the corresponding directory names.
-# For example, `00_compile_tpch directory` name will be used to get `true` or `false` value from `RUN_COMPILE_TPCH` in `tpch_variables.sh`.
-for i in $(ls -d ${PWD}/0*); do
-  # split by the first underscore and extract the step name.
-  step_name=${i#*_}
-  # convert to upper case and concatenate "RUN_" in the front to get the flag name.
-  flag_name="RUN_$(echo ${step_name} | tr [:lower:] [:upper:])"
-  # use indirect reference to convert flag name string to its value as "true" or "false".
+# We assume that the flag variable names are consistent with the corresponding directory names
+for i in $(find ${PWD} -maxdepth 1 -type d -name "[0-9]*" | sort -n); do
+  # Get just the directory name without the path
+  dir_name=$(basename "$i")
+  # split by the first underscore and extract the step name
+  step_name=${dir_name#*_}
+  step_name=${step_name%%/}
+  # convert to upper case and concatenate "RUN_" in the front to get the flag name
+  flag_name="RUN_$(echo ${step_name} | tr "[:lower:]" "[:upper:]")"
+  # use indirect reference to convert flag name string to its value
   run_flag=${!flag_name}
 
   if [ "${run_flag}" == "true" ]; then

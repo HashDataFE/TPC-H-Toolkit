@@ -1,14 +1,25 @@
 # environment options
 export ADMIN_USER="gpadmin"
 export BENCH_ROLE="hbench"
-export SCHEMA_NAME="tpch"
-export GREENPLUM_PATH=$GPHOME/greenplum_path.sh
-export CHIP_TYPE="x86"
+export DB_SCHEMA_NAME="tpch"
 
-# to connect directly to GP
-export PSQL_OPTIONS="-p 5432"
-# to connect through pgbouncer
-#export PSQL_OPTIONS="-p 6543 -U dsbench"
+## Set to "local" to run the benchmark on the COORDINATOR host or "cloud" to run the benchmark from a remote client.
+export RUN_MODEL="local"
+
+## Default port is configured via the env setting of $PGPORT for user $ADMIN_USER
+## Configure the host/port/user to connect to the cluster running the test. Can be left empty when running in local mode with gpadmin.
+## eg. export PSQL_OPTIONS="-h 2f445c57-c838-4038-a410-50ee36f9461d.ai -p 5432"
+export PSQL_OPTIONS=""
+
+## The following variables only take effect when RUN_MODEL is set to "cloud".
+### Default path to store the generated benchmark data
+export CLIENT_GEN_PATH="/tmp/dsbenchmark"
+### How many parallel processes to run on the client to generate data
+export CLIENT_GEN_PARALLEL="2"
+
+## The following variables only take effect when RUN_MODEL is set to "local".
+### How many parallel processes to run on each segment to generate data in local mode
+export LOCAL_GEN_PARALLEL="1"
 
 # benchmark options
 export GEN_DATA_SCALE="1"
@@ -29,8 +40,6 @@ export GEN_NEW_DATA="true"
 
 # step 02_init
 export RUN_INIT="true"
-# set this to true if binary location changed
-export RESET_ENV_ON_SEGMENT='false'
 
 # step 03_ddl
 # To run another TPC-H with a different BENCH_ROLE using existing tables and data
@@ -42,10 +51,15 @@ export DROP_EXISTING_TABLES="true"
 
 # step 04_load
 export RUN_LOAD="true"
+### How many parallel processes to load data, default is 2, max is 24.
+export LOAD_PARALLEL="2"
+export RUN_ANALYZE="true"
+export RUN_ANALYZE_PARALLEL="5"
 
 # step 05_sql
 export RUN_SQL="true"
-export RUN_ANALYZE="true"
+## Set to true to generate queries for the TPC-DS benchmark.
+export RUN_QGEN="true"
 #set wait time between each query execution
 export QUERY_INTERVAL="0"
 #Set to 1 if you want to stop when error occurs
@@ -56,7 +70,7 @@ export RUN_SINGLE_USER_REPORTS="true"
 
 # step 07_multi_user
 export RUN_MULTI_USER="false"
-export RUN_QGEN="true"
+export RUN_MULTI_USER_QGEN="true"
 
 # step 08_multi_user_reports
 export RUN_MULTI_USER_REPORTS="false"
@@ -69,7 +83,7 @@ export SINGLE_USER_ITERATIONS="1"
 export EXPLAIN_ANALYZE="false"
 export ENABLE_VECTORIZATION="off"
 export RANDOM_DISTRIBUTION="false"
-export STATEMENT_MEM="2GB"
+export STATEMENT_MEM="1.9GB"
 export STATEMENT_MEM_MULTI_USER="1GB"
 ## Set gpfdist location where gpfdist will run p (primary) or m (mirror)
 export GPFDIST_LOCATION="p"
@@ -77,12 +91,17 @@ export OSVERSION=$(uname)
 export ADMIN_USER=$(whoami)
 export ADMIN_HOME=$(eval echo ${HOME}/${ADMIN_USER})
 export MASTER_HOST=$(hostname -s)
-export LD_PRELOAD=/lib64/libz.so.1 ps
+export DB_SCHEMA_NAME="$(echo "${DB_SCHEMA_NAME}" | tr '[:upper:]' '[:lower:]')"
 
 # Storage options
-## Set to ”USING PAX“ for PAX table format and remove blocksize option in TABLE_STORAGE_OPTIONS. 
-## Supported in Lightning only.
-#export TABLE_ACCESS_METHOD="USING PAX"
-
+## Support TABLE_ACCESS_METHOD as ao_row / ao_column / heap in both GPDB 7 / CBDB
+## Support TABLE_ACCESS_METHOD as "PAX" for PAX table format and remove blocksize option in TABLE_STORAGE_OPTIONS for CBDB 2.0 only.
+## TABLE_ACCESS_METHOD only works for Cloudberry and Greenplum 7.0 or later.
+# export TABLE_ACCESS_METHOD="USING ao_column"
 ## Set different storage options for each access method
-export TABLE_STORAGE_OPTIONS="appendonly=true, orientation=column, compresstype=zstd, compresslevel=5, blocksize=1048576"
+## Set to use partition for the following tables:
+## catalog_returns / catalog_sales / inventory / store_returns / store_sales / web_returns / web_sales
+# export TABLE_USE_PARTITION="true"
+## SET TABLE_STORAGE_OPTIONS with different options in GP/CBDB/Cloud "appendoptimized=true, orientation=column, compresstype=zstd, compresslevel=5, blocksize=1048576"
+export TABLE_STORAGE_OPTIONS="WITH (appendonly=true, orientation=column, compresstype=zstd, compresslevel=5, blocksize=1048576)"
+

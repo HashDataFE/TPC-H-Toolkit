@@ -12,24 +12,43 @@ printf "\n"
 get_version
 filter="gpdb"
 
-for i in ${PWD}/*.${filter}.*.sql; do
-	log_time "psql -v ON_ERROR_STOP=1 -a -f ${i}"
-	psql -v ON_ERROR_STOP=1 -a -f ${i}
-	echo ""
+# Process SQL files in numeric order with absolute paths
+for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "%f\n" | sort -n); do
+  log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -a -f ${PWD}/${i}"
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -a -f "${PWD}/${i}"
+  echo ""
 done
 
-filename=$(ls ${PWD}/*.copy.*.sql)
-
-for i in ${TPC_H_DIR}/log/rollout_testing_*; do
-	logfile="'${i}'"
-	log_time "psql -v ON_ERROR_STOP=1 -a -f ${filename} -v LOGFILE=\"${logfile}\""
-	psql -v ON_ERROR_STOP=1 -a -f ${filename} -v LOGFILE="${logfile}"
+# Process copy files in numeric order with absolute paths
+for i in $(find "${TPC_H_DIR}/log" -maxdepth 1 -type f -name "rollout_testing_*" -printf "%f\n" | sort -n); do
+  logfile="${TPC_H_DIR}/log/${i}"
+  loadsql="\COPY tpch_testing.sql FROM '${logfile}' WITH DELIMITER '|';"
+  log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -a -c \"${loadsql}\""
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -a -c "${loadsql}"
+  echo ""
 done
 
-psql -v ON_ERROR_STOP=1 -t -A -c "select 'analyze ' || n.nspname || '.' || c.relname || ';' from pg_class c join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'tpch_testing'" | psql -v ON_ERROR_STOP=1 -t -A -e
+psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -t -A -c "select 'analyze ' || n.nspname || '.' || c.relname || ';' from pg_class c join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'tpch_testing'" | psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -t -A -e
 
-psql -v ON_ERROR_STOP=1 -P pager=off -f ${PWD}/detailed_report.sql
+psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -P pager=off -f ${PWD}/detailed_report.sql
 echo ""
+
+CONCURRENT_QUERY_TIME=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select round(sum(extract('epoch' from duration))) from tpch_testing.sql")
+THROUGHPUT_ELAPSED_TIME=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select max(end_epoch_seconds) - min(start_epoch_seconds) from tpch_testing.sql")
+
+S_Q=${MULTI_USER_COUNT}
+SF=${GEN_DATA_SCALE}
+
+echo "********************************************************************************"
+echo "Summary"
+echo "********************************************************************************"
+echo ""
+printf "Number of Streams (Sq)\t\t%d\n" "${S_Q}"
+printf "Scale Factor (SF)\t\t%d\n" "${SF}"
+printf "Sum of Elapse Time for all Concurrent Queries (seconds)\t%d\n" "${CONCURRENT_QUERY_TIME}"
+printf "Throughput Test Elapsed Time (seconds)\t%d\n" "${THROUGHPUT_ELAPSED_TIME}"
+printf "\n"
+echo "********************************************************************************"
 
 echo "Finished ${step}"
 

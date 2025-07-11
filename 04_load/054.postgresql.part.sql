@@ -1,1 +1,1 @@
-COPY :schema_name.part FROM :filename WITH DELIMITER '|' NULL '';
+COPY :DB_SCHEMA_NAME.part FROM :filename WITH DELIMITER '|' NULL '';
