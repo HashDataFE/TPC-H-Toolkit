@@ -28,7 +28,8 @@ TOTAL_PRICE=1
 # Add v3.0.1 score calculations per TPC-H specification
 # 1. Calculate Power metric (single stream performance)
 # Formula: Power@Size = (SF * 3600) / (product of all query and refresh function timing intervals)
-POWER=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select cast(${SF} as decimal) * 3600.0 / (product of all query and refresh function timing intervals)")
+# Using approximation since we don't have exact refresh function timing data
+POWER=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select cast(${SF} as decimal) * 3600.0 / cast(${QUERIES_TIME} as decimal)")
 
 # 2. Calculate Throughput metric (multi-stream performance)
 # Formula: Throughput@Size = (S * 22 * 3600) / Ts * SF
