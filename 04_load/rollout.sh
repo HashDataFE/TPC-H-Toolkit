@@ -132,14 +132,15 @@ exec 5>&-
 log_time "finished loading tables."
 
 log_time "Starting post loading processing..."
-log_time " 1. Create indexes and keys"
+
 
 if [ "${DB_VERSION}" == "postgresql" ]; then
+  log_time "Create indexes and keys"
   log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/100.postgresql.indexkeys.sql -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\""
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/100.postgresql.indexkeys.sql -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}"
 fi
 
-log_time " 2. Analyze tables"
+log_time "Analyze tables"
 
 start_log
 
@@ -176,7 +177,7 @@ fi
 tuples="-1"
 print_log ${tuples}
 
-log_time " 3. Clean up gpfdist"
+log_time "Clean up gpfdist"
 
 if [ "${RUN_MODEL}" == "remote" ]; then
   sh ${PWD}/stop_gpfdist.sh
