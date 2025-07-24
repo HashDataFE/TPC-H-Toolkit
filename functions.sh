@@ -159,7 +159,7 @@ function get_version() {
              POSITION('synxdb' IN version) = 0 THEN 'postgresql'
         ELSE 'unknown'
       END 
-    FROM lower(version());
+    FROM lower(version()) as version;
   ")
 
   VERSION_FULL=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -t -A -c "SELECT version();")
