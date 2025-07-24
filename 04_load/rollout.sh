@@ -14,8 +14,12 @@ ADMIN_HOME=$(eval echo ~$ADMIN_USER)
 
 filter="gpdb"
 
-if [ "$DB_VERSION" = "synxdb" ]; then
+env_file=""
+
+if [ "$DB_VERSION" = "synxdb_4" ]; then
     env_file="${GPHOME}/cluster_env.sh"
+elif [ "$DB_VERSION" = "synxdb_2" ]; then
+    env_file="${GPHOME}/synxdb_path.sh"
 else
     env_file="${GPHOME}/greenplum_path.sh"
 fi
