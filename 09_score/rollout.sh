@@ -27,13 +27,14 @@ TOTAL_PRICE=1
 
 # Add v3.0.1 score calculations per TPC-H specification
 # 1. Calculate Power metric (single stream performance)
-# Formula: Power@Size = (22 * SF) / (Query Execution Time in hours)
-POWER=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select cast(22 as decimal) * cast(${SF} as decimal) / (cast(${QUERIES_TIME} as decimal)/3600.0)")
+# Formula: Power@Size = (SF * 3600) / (product of all query and refresh function timing intervals)
+# Using approximation since we don't have exact refresh function timing data
+POWER=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select cast(${SF} as decimal) * 3600.0 / cast(${QUERIES_TIME} as decimal)")
 
 # 2. Calculate Throughput metric (multi-stream performance)
-# Formula: Throughput@Size = (S * 22 * 3600) / Ts
+# Formula: Throughput@Size = (S * 22 * 3600) / Ts * SF
 # Where: S = number of query streams, Ts = throughput test elapsed time in seconds
-THROUGHPUT=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select cast(${S_Q} as decimal) * 22 * 3600.0 / cast(${THROUGHPUT_ELAPSED_TIME} as decimal)")
+THROUGHPUT=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select cast(${S_Q} as decimal) * 22 * 3600.0 / cast(${THROUGHPUT_ELAPSED_TIME} as decimal) * cast(${SF} as decimal)")
 
 # 3. Calculate composite QphH@Size metric
 # Formula: QphH@Size = sqrt(Power@Size * Throughput@Size)
@@ -56,6 +57,8 @@ printf "\n"
 
 printf "TPC-H v3.0.1 Performance Metrics\n"
 printf "====================================\n"
+printf "Data refresh tests are not supported with this toolkit.\n"
+printf "This score is a simulated number, don't use for any purpose.\n"
 printf "%-20s %10.1f QphH\n" "Power@${SF}GB" ${POWER}
 printf "%-20s %10.1f QphH\n" "Throughput@${SF}GB" ${THROUGHPUT}
 printf "%-20s %10.1f QphH\n" "QphH@${SF}GB" ${QPHH}
