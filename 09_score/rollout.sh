@@ -57,6 +57,8 @@ printf "\n"
 
 printf "TPC-H v3.0.1 Performance Metrics\n"
 printf "====================================\n"
+printf "Data refresh tests are not supported with this toolkit.\n"
+printf "This score is a simulated number, don't use for any purpose.\n"
 printf "%-20s %10.1f QphH\n" "Power@${SF}GB" ${POWER}
 printf "%-20s %10.1f QphH\n" "Throughput@${SF}GB" ${THROUGHPUT}
 printf "%-20s %10.1f QphH\n" "QphH@${SF}GB" ${QPHH}
