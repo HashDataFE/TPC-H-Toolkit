@@ -145,36 +145,41 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
   fi
 fi
 
-DropRoleDenp="drop owned by ${BENCH_ROLE} cascade"
-DropRole="DROP ROLE IF EXISTS ${BENCH_ROLE}"
-CreateRole="CREATE ROLE ${BENCH_ROLE}"
-GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
-GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
-echo "rm -f ${PWD}/GrantTablePrivileges.sql"
-rm -f ${PWD}/GrantTablePrivileges.sql
-psql ${PSQL_OPTIONS} -tc "select \$\$GRANT ALL PRIVILEGES on table ${DB_SCHEMA_NAME}.\$\$||tablename||\$\$ TO ${BENCH_ROLE};\$\$ from pg_tables where schemaname='${DB_SCHEMA_NAME}'" > ${PWD}/GrantTablePrivileges.sql
+# Check if current user matches BENCH_ROLE
+if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
+  log_time "Current user ${DB_CURRENT_USER} does not match BENCH_ROLE ${BENCH_ROLE}."
+  DropRoleDenp="drop owned by ${BENCH_ROLE} cascade"
+  DropRole="DROP ROLE IF EXISTS ${BENCH_ROLE}"
+  CreateRole="CREATE ROLE ${BENCH_ROLE}"
+  GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
+  GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
+  echo "rm -f ${PWD}/GrantTablePrivileges.sql"
+  rm -f ${PWD}/GrantTablePrivileges.sql
+  psql ${PSQL_OPTIONS} -tc "SELECT format('GRANT ALL PRIVILEGES ON TABLE %I.%I TO %I;', '${DB_SCHEMA_NAME}', tablename, '${BENCH_ROLE}') FROM pg_tables WHERE schemaname='${DB_SCHEMA_NAME}'" > ${PWD}/GrantTablePrivileges.sql
+  # Check if role exists in PostgreSQL
 
-start_log
+  EXISTS=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "SELECT 1 FROM pg_roles WHERE rolname='${BENCH_ROLE}'")
 
-if [ "${BENCH_ROLE}" != "gpadmin" ]; then
-  set +e
-  log_time "Drop role dependencies for ${BENCH_ROLE}"
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${DropRoleDenp}"
-  set -e
-  log_time "Drop role ${BENCH_ROLE}"
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${DropRole}"
-  log_time "Creating role ${BENCH_ROLE}"
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${CreateRole}"
+  # Create role if not exists
+  if [ "$EXISTS" != "1" ]; then
+    echo "Role ${BENCH_ROLE} does not exist. Creating..."
+    log_time "Creating role ${BENCH_ROLE}"
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${CreateRole}"
+  else
+    set +e
+    log_time "Drop role dependencies for ${BENCH_ROLE}"
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${DropRoleDenp}"
+    set -e
+  fi
+  
   log_time "Grant schema privileges to role ${BENCH_ROLE}"
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantSchemaPrivileges}"
   log_time "Grant table privileges to role ${BENCH_ROLE}"
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantTablePrivileges}"
+  log_time "Grant table privileges to role ${BENCH_ROLE}"
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -f ${PWD}/GrantTablePrivileges.sql
+
 fi
-
-#log_time "Set search_path for database gpadmin"
-#psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${SetSearchPath}"
-
-print_log
 
 echo "Finished ${step}"
 log_time "Step ${step} finished"
