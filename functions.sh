@@ -51,6 +51,7 @@ function check_variables() {
 
   if [ ${#missing_vars[@]} -ne 0 ]; then
     echo "The following required variables are missing or empty: ${missing_vars[*]}"
+    echo "Please check the ${VARS_FILE}, verify that the database is up and running and psql can connect to the database."
     exit 1
   fi
 }
