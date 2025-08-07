@@ -265,6 +265,15 @@ For supported systems (Lightning 1.5.3+):
 export ENABLE_VECTORIZATION="on"
 ```
 
+### Optimizer Settings** (for supported systems)
+
+```bash
+# Adjust optimizer settings in 01_gen_data/optimizer.txt
+# Turn ORCA on/off for each queries by setting in this file
+# After changing the settings, make sure to run the QGEN to generate the queries with the new settings.
+```
+
+
 ## Benchmark Modifications
 
 The following modifications were made to the standard TPC-H queries for compatibility:
