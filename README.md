@@ -265,6 +265,14 @@ For supported systems (Lightning 1.5.3+):
 export ENABLE_VECTORIZATION="on"
 ```
 
+### Optimizer Settings (for supported systems)
+
+```bash
+# Adjust optimizer settings in 01_gen_data/optimizer.txt
+# Turn ORCA on/off for each queries by setting in this file
+# After changing the settings, make sure to run the QGEN to generate the queries with the new settings.
+```
+
 ## Benchmark Modifications
 
 The following modifications were made to the standard TPC-H queries for compatibility:
@@ -292,3 +300,29 @@ The following modifications were made to the standard TPC-H queries for compatib
 - Main log file: Generated when using `run.sh` with timestamp
 - Database server logs: Check PostgreSQL/Greenplum log directory
 - Step-specific logs: Located in respective step directories (01_gen_data, 03_ddl, etc.)
+
+## Contributing
+
+We welcome contributions to the TPC-H Toolkit project. Please follow these steps to contribute:
+
+1. Fork the repository
+2. Create a new branch for your feature or bug fix
+3. Make your changes and ensure they follow the project's coding standards
+4. Add tests if applicable
+5. Submit a pull request with a clear description of your changes
+
+Before submitting a pull request, please ensure:
+- Your code follows the existing style and conventions
+- All tests pass
+- Documentation is updated if necessary
+- You have added yourself to the contributors list if desired
+
+For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+The TPC-H benchmark specification is owned by the Transaction Processing Performance Council (TPC). This toolkit is designed to run the TPC-H benchmark but is not officially endorsed by the TPC.
+
+The TPC-H database generation tools (dbgen and qgen) are used under the terms of the TPC End User License Agreement. See [00_compile_tpch/EULA.txt](00_compile_tpch/EULA.txt) for details.
